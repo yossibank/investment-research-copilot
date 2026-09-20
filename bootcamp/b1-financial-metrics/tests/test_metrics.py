@@ -1,5 +1,5 @@
 import pytest
-from src.metrics import growth_rate, operating_margin
+from financial_metrics.metrics import growth_rate, operating_margin
 
 
 def test_growth_rate() -> None:
