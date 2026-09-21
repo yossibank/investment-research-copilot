@@ -8,6 +8,9 @@ def test_growth_rate() -> None:
         current=110,
     )
 
+    # approx
+    #
+    # 完全一致ではなく「十分近ければOK」とする。
     assert result == pytest.approx(10.0)
 
 
@@ -17,6 +20,9 @@ def test_growth_rate_decrease() -> None:
         current=80,
     )
 
+    # approx
+    #
+    # 完全一致ではなく「十分近ければOK」とする。
     assert result == pytest.approx(-20.0)
 
 

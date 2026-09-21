@@ -3,13 +3,13 @@ def growth_rate(
     current: float | None,
 ) -> float | None:
     """
-    前期比を%で返す。
+    売上高・営業利益・EPSなどの前年同期比成長率を計算する。
 
     例:
-    previous = 100
-    current = 110
+        前年売上高(previous) = 100
+        今年売上高(current) = 120
 
-    -> 10.0
+        (120 - 100) / 100 * 100 = 20%
     """
 
     if previous is None or current is None:
@@ -20,18 +20,21 @@ def growth_rate(
 
     return (current - previous) / previous * 100
 
+
 def operating_margin(
     revenue: float | None,
     operating_income: float | None,
 ) -> float | None:
     """
-    営業利益率を%で返す。
+    営業利益率を計算する。
+
+    営業利益率 = 営業利益 / 売上高 * 100
 
     例:
-    revenue = 1000
-    operating_income = 100
+        売上高(revenue) = 1000
+        営業利益(operating_income) = 100
 
-    -> 10.0
+        100 / 1000 * 100 = 10%
     """
 
     if revenue is None or operating_income is None:

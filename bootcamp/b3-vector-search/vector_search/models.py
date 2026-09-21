@@ -6,7 +6,7 @@ class DocumentMetadata(BaseModel):
     period: str
     document_name: str
     source_url: str
-    retrived_at: str
+    retrieved_at: str
 
 
 class PageText(BaseModel):
