@@ -10,11 +10,7 @@
 - pytestで計算ロジックを検証した
 - Recall@5の意味を理解した
 
-### Problems
-
-- 特になし
-
-### Tomorrow
+### Next
 
 - 決算資料からLLMで構造化データを抽出する
 
@@ -47,10 +43,41 @@ Extraction / Understanding
 Python:
 Calculation / Validation
 
-### Problems
-
-- 特になし
-
 ### Next
 
 Embedding / Vector Search
+
+## 2026-09-21 - B3 Vector Search
+
+### Learned
+
+- 決算PDFをpage単位でtext化した
+- textをchunkへ分割した
+- chunkにsource metadataを付与した
+- multilingual-e5-smallでEmbeddingを作成した
+- queryとpassageをvector化した
+- cosine similarityでTop-K検索した
+- Embeddingをcacheした
+
+### Important
+
+RAGでは回答生成より先に
+「正しい根拠を取れるか」が重要。
+
+質問
+↓
+Retrieval
+↓
+Context
+↓
+LLM
+
+検索が失敗していれば、
+LLMを改善しても正しい回答にはならない。
+
+### Next
+
+- 20件のGolden Setを作る
+- Recall@5を測る
+- Top-K chunkだけをClaudeへ渡す
+- 根拠付き回答を生成する
