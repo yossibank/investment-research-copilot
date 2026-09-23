@@ -209,3 +209,55 @@ Source Match Rate:
 - FastAPIからRAGを呼ぶ
 - SwiftUIから質問する
 - 回答と資料名・ページを表示する
+
+## 2026-09-23 - B5 FastAPI + SwiftUI
+
+### Learned
+
+- B4 RAGをFastAPIから呼び出した
+- POST /research/queryを実装した
+- PydanticでRequest / Responseを定義した
+- Input Validationを追加した
+- Claude API ErrorをHTTP Errorへ変換した
+- TestClientでFastAPIをテストした
+- Claude APIをMockしてAPI Testした
+- SwiftUIからFastAPIへPOSTした
+- JSONをCodableでdecodeした
+- 回答とsource/pageをUIへ表示した
+- API SecretをBackendだけで管理した
+
+### Architecture
+
+SwiftUI
+↓
+APIClient
+↓
+FastAPI
+↓
+RAG
+↓
+Vector Search
+↓
+Claude
+
+### Security
+
+ANTHROPIC_API_KEYはBackendの.envだけに置く。
+
+iOS AppへSecretを埋め込まない。
+
+### Important
+
+LLM Outputをそのまま信用しない。
+
+Claudeが返したsource_chunk_idは、
+Backend側でも実際のretrieval resultsに
+存在することを確認する。
+
+### Next
+
+- Streaming Response
+- Structured Logging
+- Request ID
+- Latency計測
+- GitHub公開準備

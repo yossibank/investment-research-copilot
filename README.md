@@ -32,7 +32,7 @@ The application is intended for research and learning purposes.
 - [x] B2 Structured Extraction
 - [x] B3 Vector Search
 - [x] B4 RAG Evaluation
-- [ ] B5 FastAPI + SwiftUI
+- [x] B5 FastAPI + SwiftUI
 - [ ] B6 Observability + Release
 - [ ] B7 Tool Calling
 - [ ] B8 Research Copilot MVP

@@ -19,3 +19,10 @@ data/raw/
 # IDE
 .vscode/
 .idea/
+
+# Xcode
+**/xcuserdata/
+**/*.xcuserstate
+
+# macOS
+.DS_Store
