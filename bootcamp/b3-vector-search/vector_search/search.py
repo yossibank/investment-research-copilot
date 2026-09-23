@@ -1,4 +1,5 @@
 import json
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -12,6 +13,17 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 CHUNKS_PATH = BASE_DIR / "cache" / "chunks.json"
 
 EMBEDDINGS_PATH = BASE_DIR / "cache" / "embeddings.npy"
+
+
+# 関数の結果を覚える装飾
+@lru_cache(maxsize=1)
+def get_model() -> SentenceTransformer:
+    """
+    Embedding Modelを最初の一回だけ生成する。
+    2回目以降は同じinstanceを再利用する。
+    """
+
+    return SentenceTransformer(MODEL_NAME)
 
 
 def load_chunks() -> list[Chunk]:
@@ -60,7 +72,7 @@ def search(
     if len(chunks) != len(embeddings):
         raise RuntimeError("Chunk count and embedding count do not match.")
 
-    model = SentenceTransformer(MODEL_NAME)
+    model = get_model()
 
     query_embedding = model.encode(
         # E5系モデルでは

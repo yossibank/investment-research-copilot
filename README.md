@@ -29,9 +29,9 @@ The application is intended for research and learning purposes.
 ### Bootcamp
 
 - [x] B1 Financial Metrics
-- [ ] B2 Structured Extraction
-- [ ] B3 Vector Search
-- [ ] B4 RAG Evaluation
+- [x] B2 Structured Extraction
+- [x] B3 Vector Search
+- [x] B4 RAG Evaluation
 - [ ] B5 FastAPI + SwiftUI
 - [ ] B6 Observability + Release
 - [ ] B7 Tool Calling

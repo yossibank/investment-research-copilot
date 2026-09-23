@@ -81,3 +81,131 @@ LLMを改善しても正しい回答にはならない。
 - Recall@5を測る
 - Top-K chunkだけをClaudeへ渡す
 - 根拠付き回答を生成する
+
+## 2026-09-23 - B4 RAG Evaluation
+
+### Learned
+
+- B3 Vector SearchをRAGへ接続した
+- Top-5 chunkだけをClaudeへ渡した
+- Structured Outputで回答とsourceを取得した
+- Golden Setを作成した
+- Recall@5を測定した
+- Answer Accuracyを測定した
+- Source Match Rateを測定した
+- 回答不能問題も評価した
+
+### Important
+
+RAGの品質は、
+
+Retrieval
++
+Generation
+
+に分けて考える。
+
+① 正しい根拠を取得できた？ → Retrieval
+
+② 正しい根拠を渡したのに回答を間違えた？ → Generation
+
+③ 解答は正しいのに、示した根拠が違う？ → Source Attribution
+
+* Retrieval Error
+  * 回答するために必要な根拠をVector Searchで取得できなかった
+  * Recall@5の値が低い
+
+```
+元資料:
+原材料価格の改善および価格改定効果により、
+営業利益は前年同期比で増加しました。
+
+正解Chunk:
+company-p7-c1
+
+検索結果:
+company-p4-c0
+「営業利益は132億円となりました」
+
+company-p3-c2
+「売上高は1,100億円となりました」
+
+※ なぜ増えたのか分からない → Claude側のSystem Promptを何度直しても、根拠が渡っていないので改善しない
+```
+
+原因 | 具体例
+:--: | :--:
+Chunkが大きすぎる | 関係ない情報が大量に混ざる
+Chunkが小さすぎる | 理由と結果が別Chunkに分離する
+Overlap不足 | 文脈がChunk境界が切れる
+Embeddingとの相性 | 日本語財務文書の意味をうまく捉えられない
+Queryが曖昧 | 「利益について教えて」など
+Top-Kが小さい | Rank6に正解があるのにTop5までしか取らない
+PDF抽出が崩れている | 根拠自体がうまくテキスト化されていない
+
+* Generation Error
+  * 正しい根拠をClaudeへ渡したのに、Claudeが回答を間違えた
+  * Promptを調整する
+
+```
+retrieval_hit = true
+
+Top5:
+company-p7-c1
+
+原材料価格の改善及び価格改定効果により、
+営業利益は増加しました
+
+回答:
+営業利益は売上高の増加によって増えました。
+
+原因:
+Prompt
+Contextの渡し方
+Claude Model
+Output Schema
+質問の曖昧さ
+複数Chunk間の情報統合
+```
+
+* Source Attribution Error
+  * 回答そのものは正しいが、Claudeが「この情報を使った」と示した出典が間違っている
+
+```
+正解:
+company-p4-c0
+
+回答:
+{
+  "answer": "営業利益は132億円です。",
+  "is_answerable": true,
+  "source_chunk_ids": [
+    "company-p8-c0"
+  ],
+  "source_pages": [
+    8
+  ]
+}
+
+※ 正しい根拠はPage4でおかしい
+```
+
+### Baseline
+
+Recall@5:
+90%
+
+Page Recall@5:
+100%
+
+Answer Accuracy:
+95%
+
+Source Match Rate:
+90%
+
+### Next
+
+- FastAPIからRAGを呼ぶ
+- SwiftUIから質問する
+- 回答と資料名・ページを表示する
