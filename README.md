@@ -1,105 +1,87 @@
 # Investment Research Copilot
 
-An AI-powered research application for exploring company earnings filings with grounded answers, source attribution, and measurable RAG evaluation.
+An AI-powered investment research application for exploring company earnings filings with grounded answers, source attribution, deterministic financial calculations, and measurable RAG evaluation.
 
-The project combines a SwiftUI client, FastAPI backend, semantic search, Claude, and a manually curated evaluation set to demonstrate an end-to-end Applied AI workflow.
+The project combines **SwiftUI, FastAPI, semantic search, Claude, structured outputs, streaming, observability, and controlled tool calling** to demonstrate an end-to-end Applied AI workflow.
 
-> This project is for research and educational purposes only. It does not provide investment advice or trading recommendations.
+> This project is for research and educational purposes only.
+> It does not provide investment advice, trading recommendations, or definitive stock-price predictions.
 
 ---
 
 ## Overview
 
-Investment Research Copilot helps users ask natural-language questions about company earnings documents and receive answers grounded in the original source material.
+Investment Research Copilot helps users ask natural-language questions about company earnings documents and receive answers grounded in primary-source materials.
 
-Instead of sending an entire filing directly to an LLM, the application first retrieves the most relevant document chunks using semantic search and then provides only that evidence to Claude.
+Instead of sending an entire filing directly to an LLM, the application:
 
-The system is designed around three principles:
+1. extracts text from source documents,
+2. splits the text into searchable chunks,
+3. converts those chunks into embeddings,
+4. retrieves the most relevant evidence,
+5. provides only that evidence to Claude,
+6. generates a grounded answer,
+7. displays the supporting source information.
 
-* Ground answers in primary-source documents.
-* Show where the answer came from.
-* Measure retrieval and generation quality separately.
+The project is built around three principles:
 
----
-
-## Demo Flow
-
-A user can ask a question such as:
-
-```text
-What was the company's operating income?
-```
-
-The application processes the request as follows:
-
-```text
-SwiftUI
-   ↓
-FastAPI
-   ↓
-Vector Search
-   ↓
-Top-K relevant chunks
-   ↓
-Claude
-   ↓
-Grounded answer
-   ↓
-Source document / page
-```
-
-The SwiftUI client displays both the generated answer and the retrieved evidence.
+* **Ground answers in primary-source documents**
+* **Separate deterministic computation from LLM reasoning**
+* **Evaluate retrieval and generation quality independently**
 
 ---
 
-## Architecture
+## Current Architecture
 
 ```text
-                    ┌─────────────────────┐
-                    │     SwiftUI App     │
-                    │                     │
-                    │ Question / Answer   │
-                    │ Retrieved Evidence  │
-                    └──────────┬──────────┘
-                               │
-                               │ HTTP / NDJSON
-                               ▼
-                    ┌─────────────────────┐
-                    │       FastAPI       │
-                    │                     │
-                    │ Validation          │
-                    │ Request ID          │
-                    │ Structured Logging  │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │      RAG Layer      │
-                    │                     │
-                    │ Retrieval           │
-                    │ Context Building    │
-                    │ Claude Generation   │
-                    └──────────┬──────────┘
-                               │
-                 ┌─────────────┴─────────────┐
-                 ▼                           ▼
-       ┌──────────────────┐        ┌──────────────────┐
-       │ Semantic Search  │        │      Claude      │
-       │                  │        │                  │
-       │ multilingual-e5  │        │ Grounded Answer  │
-       │ Cosine Similarity│        │ Streaming        │
-       └─────────┬────────┘        └──────────────────┘
-                 │
-                 ▼
-       ┌──────────────────┐
-       │ Filing Documents │
-       │                  │
-       │ PDF              │
-       │ Page Extraction  │
-       │ Chunking         │
-       │ Embeddings       │
-       └──────────────────┘
+                       ┌──────────────────────┐
+                       │      SwiftUI App     │
+                       │                      │
+                       │ Question             │
+                       │ Answer               │
+                       │ Retrieved Evidence   │
+                       └──────────┬───────────┘
+                                  │
+                                  │ HTTP / NDJSON
+                                  ▼
+                       ┌──────────────────────┐
+                       │       FastAPI        │
+                       │                      │
+                       │ Validation           │
+                       │ Request ID           │
+                       │ Error Handling       │
+                       │ Structured Logging   │
+                       └──────────┬───────────┘
+                                  │
+                                  ▼
+                       ┌──────────────────────┐
+                       │      RAG Layer       │
+                       │                      │
+                       │ Vector Retrieval     │
+                       │ Context Building     │
+                       │ Claude Generation    │
+                       └───────┬───────┬──────┘
+                               │       │
+                    ┌──────────┘       └──────────┐
+                    ▼                             ▼
+          ┌───────────────────┐        ┌────────────────────┐
+          │  Semantic Search  │        │       Claude       │
+          │                   │        │                    │
+          │ multilingual-e5   │        │ Grounded Answer    │
+          │ cosine similarity │        │ Streaming          │
+          └─────────┬─────────┘        └────────────────────┘
+                    │
+                    ▼
+          ┌───────────────────┐
+          │ Filing Documents  │
+          │                   │
+          │ PDF Extraction    │
+          │ Chunking          │
+          │ Embeddings        │
+          └───────────────────┘
 ```
+
+A controlled Tool Calling layer has also been implemented as a focused preview and will be integrated into the main research pipeline during the MVP integration stage.
 
 ---
 
@@ -114,9 +96,21 @@ Deterministic Python functions calculate financial metrics such as:
 * Operating margin
 * EPS growth
 
-Financial calculations are intentionally handled in normal Python code rather than delegated to an LLM.
+Financial arithmetic is intentionally handled in normal Python code instead of being delegated to an LLM.
 
-### Structured Filing Extraction
+Example:
+
+```text
+Previous revenue: 1,000
+Current revenue: 1,100
+
+Revenue growth:
+10.0%
+```
+
+---
+
+## Structured Filing Extraction
 
 Claude extracts structured financial information from filing text using Pydantic schemas.
 
@@ -131,23 +125,45 @@ Examples include:
 
 Missing information is represented explicitly instead of being guessed.
 
-### Semantic Search
+Example output:
 
-Company filings are:
+```json
+{
+  "company": "Example Holdings",
+  "revenue": {
+    "value": 1100.0,
+    "unit": "億円",
+    "period": "2026年3月期",
+    "source_page": null
+  },
+  "operating_income": {
+    "value": 132.0,
+    "unit": "億円",
+    "period": "2026年3月期",
+    "source_page": null
+  }
+}
+```
+
+---
+
+## Semantic Search
+
+Company filings are processed through the following pipeline:
 
 ```text
 PDF
  ↓
-Page extraction
+Page Extraction
  ↓
 Chunking
  ↓
 Embedding
  ↓
-Semantic search
+Semantic Search
 ```
 
-The current baseline uses:
+The current embedding baseline uses:
 
 ```text
 intfloat/multilingual-e5-small
@@ -155,42 +171,48 @@ intfloat/multilingual-e5-small
 
 Document chunks are embedded using the `passage:` prefix, while user questions use the `query:` prefix.
 
-Retrieved chunks preserve source metadata including:
+Each chunk preserves source metadata such as:
 
 * Company
-* Document
+* Document name
 * Reporting period
 * Page
 * Source URL
 * Chunk ID
 
-### Retrieval-Augmented Generation
+---
 
-The RAG pipeline retrieves the top relevant chunks before generating an answer.
+## Retrieval-Augmented Generation
+
+The RAG pipeline retrieves relevant evidence before asking Claude to generate an answer.
 
 ```text
 Question
  ↓
-Top-K retrieval
+Embedding
  ↓
-Context
+Top-K Retrieval
+ ↓
+Grounded Context
  ↓
 Claude
  ↓
-Structured answer
+Structured Answer
 ```
 
 Claude is instructed to:
 
-* Use only the supplied context.
-* Avoid guessing missing information.
-* Preserve numerical values and units.
-* Abstain when the source material is insufficient.
-* Return source chunk IDs and source pages.
+* use only the supplied context,
+* avoid guessing missing information,
+* preserve numerical values and units,
+* abstain when the source material is insufficient,
+* return source chunk IDs and source pages.
 
-### Answer Abstention
+---
 
-The system explicitly evaluates whether the model can avoid answering questions that cannot be supported by the supplied filing.
+## Answer Abstention
+
+The system evaluates whether Claude can avoid answering unsupported questions.
 
 For example:
 
@@ -198,262 +220,97 @@ For example:
 What will the company's stock price be in 2035?
 ```
 
-should not produce a fabricated prediction.
+The expected behavior is not to fabricate a prediction.
 
-The expected behavior is to indicate that the answer cannot be confirmed from the provided material.
+Instead, the system should indicate that the answer cannot be confirmed from the supplied source material.
 
-### FastAPI Backend
+This behavior is explicitly included in the evaluation dataset.
 
-The backend exposes the research pipeline through an HTTP API.
+---
 
-Main endpoints:
+## Tool Calling
+
+A controlled client-side Tool Calling layer has been implemented for deterministic operations.
+
+The first read-only tool is:
+
+```text
+calculate_financial_metrics
+```
+
+It calculates:
+
+* Revenue growth
+* Operating income growth
+* Previous operating margin
+* Current operating margin
+
+The current Tool Calling flow is:
+
+```text
+User Question
+      ↓
+Claude
+      ↓
+Tool Required?
+   ↙       ↘
+ No         Yes
+ ↓           ↓
+Answer    tool_use
+             ↓
+        Application
+             ↓
+       Allowlist Check
+             ↓
+      Input Validation
+             ↓
+       Python Function
+             ↓
+         tool_result
+             ↓
+           Claude
+             ↓
+        Final Answer
+```
+
+Claude does **not** execute arbitrary Python code.
+
+The application controls which tools are available and validates all generated tool arguments before execution.
+
+The initial tool is intentionally:
+
+* read-only,
+* side-effect free,
+* deterministic,
+* explicitly registered.
+
+### Tool Safety
+
+The Tool Calling layer follows several guardrails:
+
+* Only explicitly registered tools can be executed.
+* Unknown tool names are rejected.
+* Tool arguments are validated with Pydantic.
+* Arbitrary model-generated code is never passed to `eval()` or `exec()`.
+* Tool execution is limited to a maximum number of rounds.
+* Tool execution errors are returned as controlled `tool_result` messages.
+* The initial tool cannot modify external data.
+
+The Tool Calling implementation is currently a focused bootcamp preview. Integration with the main RAG research pipeline is planned for the MVP integration stage.
+
+---
+
+## FastAPI Backend
+
+The backend exposes the research pipeline through HTTP APIs.
+
+Current endpoints include:
 
 ```text
 GET  /health
-
 POST /research/query
-
 POST /research/stream
 ```
-
-`/research/query` returns a complete structured response.
-
-`/research/stream` streams generated text incrementally to the client.
-
-### SwiftUI Client
-
-The iOS application:
-
-* Sends research questions to FastAPI.
-* Decodes structured API responses.
-* Displays answers and evidence.
-* Handles loading and error states.
-* Supports incremental streaming responses.
-
-Anthropic API credentials are never stored in the iOS application.
-
-### Streaming
-
-The streaming pipeline uses:
-
-```text
-Claude Streaming
- ↓
-FastAPI
- ↓
-NDJSON
- ↓
-URLSession.bytes(for:)
- ↓
-SwiftUI
-```
-
-This improves perceived latency by displaying the answer as it is generated rather than waiting for the complete response.
-
-### Observability
-
-Backend requests are logged using structured JSON.
-
-Captured fields include:
-
-* Request ID
-* HTTP method
-* Endpoint
-* Status code
-* Total latency
-* Retrieval latency
-* Top-K
-* Input tokens
-* Output tokens
-
-Example:
-
-```json
-{
-  "event": "research_stream_completed",
-  "request_id": "example-request-id",
-  "latency_ms": 1853.2,
-  "retrieval_ms": 41.8,
-  "top_k": 5,
-  "input_tokens": 3021,
-  "output_tokens": 182
-}
-```
-
-User prompts, raw filing contents, API keys, and other sensitive values are not intentionally written to application logs.
-
----
-
-## RAG Pipeline
-
-The retrieval pipeline currently follows this sequence:
-
-```text
-1. Load source PDF
-
-2. Extract text page by page
-
-3. Split each page into overlapping chunks
-
-4. Store source metadata on every chunk
-
-5. Generate normalized embeddings
-
-6. Embed the user query
-
-7. Calculate semantic similarity
-
-8. Select the Top-K chunks
-
-9. Build grounded context
-
-10. Send the context and question to Claude
-
-11. Return answer and evidence
-```
-
-The initial chunking baseline uses:
-
-```text
-max_chars = 800
-overlap = 120
-top_k = 5
-```
-
-These values are treated as evaluation baselines rather than assumed to be optimal.
-
----
-
-## Evaluation
-
-RAG quality is evaluated separately at the retrieval, generation, and source-attribution layers.
-
-The current evaluation set contains manually curated questions derived from the source documents.
-
-### Metrics
-
-| Metric            | Score |
-| ----------------- | ----: |
-| Recall@5          | 90.0% |
-| Page Recall@5     | 100.0% |
-| Answer Accuracy   | 95.0% |
-| Source Match Rate | 90.0% |
-
-Replace these values with the latest measured baseline from:
-
-```text
-bootcamp/b4-rag-evaluation/eval/results/latest.json
-```
-
-### Recall@5
-
-Recall@5 measures whether the expected evidence chunk appears anywhere in the top five retrieval results.
-
-```text
-Expected evidence
-       ↓
-Top 5 results
-       ↓
-Found?
-```
-
-This primarily evaluates retrieval quality.
-
-### Page Recall@5
-
-Page Recall@5 measures whether a chunk from the expected source page appears in the retrieval results.
-
-This helps distinguish between:
-
-```text
-Wrong document/page
-```
-
-and:
-
-```text
-Correct page but imperfect chunk boundary
-```
-
-### Answer Accuracy
-
-Answer Accuracy checks whether the generated answer contains the required facts defined in the Golden Set.
-
-Answerable and unanswerable questions are both evaluated.
-
-For unanswerable questions, correctly abstaining is considered a successful result.
-
-### Source Match Rate
-
-Source Match Rate checks whether the generated response references the expected source evidence.
-
-This is evaluated separately from answer correctness because a correct answer with an incorrect citation is still a quality issue.
-
----
-
-## Failure Analysis
-
-Evaluation failures are analyzed by pipeline stage.
-
-### Retrieval Error
-
-```text
-Expected evidence not found in Top-K.
-```
-
-Potential areas to investigate:
-
-* Chunk size
-* Chunk overlap
-* Embedding model
-* Query formulation
-* Top-K
-* PDF extraction quality
-
-### Generation Error
-
-```text
-Correct evidence retrieved,
-but the generated answer is incorrect.
-```
-
-Potential areas to investigate:
-
-* Prompt instructions
-* Context formatting
-* Conflicting chunks
-* Model behavior
-* Structured output constraints
-
-### Source Attribution Error
-
-```text
-Answer is correct,
-but the cited evidence is incorrect.
-```
-
-Potential areas to investigate:
-
-* Source-selection instructions
-* Duplicate evidence
-* Context formatting
-* Attribution logic
-
-The debugging order is intentionally:
-
-```text
-Retrieval
- ↓
-Generation
- ↓
-Source Attribution
-```
-
-A generation problem should not be diagnosed before verifying that the model received the correct evidence.
-
----
-
-## API
 
 ### Health Check
 
@@ -461,7 +318,7 @@ A generation problem should not be diagnosed before verifying that the model rec
 GET /health
 ```
 
-Example response:
+Example:
 
 ```json
 {
@@ -503,15 +360,27 @@ Example response:
 }
 ```
 
-### Streaming Research
+---
 
-```http
-POST /research/stream
+## Streaming
+
+The streaming pipeline uses:
+
+```text
+Claude Streaming
+ ↓
+FastAPI
+ ↓
+NDJSON
+ ↓
+URLSession.bytes(for:)
+ ↓
+SwiftUI
 ```
 
-The streaming endpoint returns NDJSON events.
+This improves perceived latency by displaying generated text incrementally instead of waiting for the full response.
 
-Example:
+Example stream:
 
 ```json
 {"type":"metadata","request_id":"abc","retrieved_sources":[]}
@@ -520,6 +389,307 @@ Example:
 {"type":"text_delta","text":" ..."}
 {"type":"done","request_id":"abc","latency_ms":1850}
 ```
+
+Retrieved evidence shown during streaming represents the context selected by retrieval and should not automatically be interpreted as exact post-generation source attribution.
+
+---
+
+## SwiftUI Client
+
+The iOS client:
+
+* sends research questions to FastAPI,
+* decodes structured API responses,
+* displays generated answers,
+* displays supporting evidence,
+* handles loading and error states,
+* supports incremental streaming responses.
+
+The iOS application never stores the Anthropic API key.
+
+Application layers are separated as:
+
+```text
+SwiftUI View
+ ↓
+ViewModel
+ ↓
+APIClient
+ ↓
+FastAPI
+ ↓
+RAG / Claude
+```
+
+---
+
+## Evaluation
+
+Retrieval quality, answer quality, and source attribution are measured separately.
+
+The current evaluation dataset contains manually curated questions derived from source documents.
+
+### Baseline Metrics
+
+Replace the values below with the latest measured results from:
+
+```text
+bootcamp/b4-rag-evaluation/eval/results/latest.json
+```
+
+| Metric            | Score |
+| ----------------- | ----: |
+| Recall@5          | 90.0% |
+| Page Recall@5     | 100.0% |
+| Answer Accuracy   | 95.0% |
+| Source Match Rate | 90.0% |
+
+---
+
+## Recall@5
+
+Recall@5 measures whether the expected evidence chunk appears anywhere in the top five retrieval results.
+
+```text
+Question
+ ↓
+Top 5 retrieval results
+ ↓
+Expected evidence present?
+```
+
+This primarily measures retrieval quality.
+
+---
+
+## Page Recall@5
+
+Page Recall@5 measures whether evidence from the expected page appears in the top retrieval results.
+
+This helps distinguish:
+
+```text
+Wrong document or page
+```
+
+from:
+
+```text
+Correct page but imperfect chunk selection
+```
+
+A high Page Recall with lower Chunk Recall can indicate that chunk boundaries need improvement.
+
+---
+
+## Answer Accuracy
+
+Answer Accuracy measures whether the generated answer contains the required factual information defined in the Golden Set.
+
+The current baseline uses rule-based required-term matching.
+
+Both answerable and unanswerable questions are included.
+
+For unsupported questions, correctly abstaining is considered a successful result.
+
+---
+
+## Source Match Rate
+
+Source Match Rate checks whether the generated answer references the expected evidence.
+
+Answer correctness and citation correctness are intentionally evaluated separately.
+
+A correct answer with an incorrect citation is still treated as a quality issue.
+
+---
+
+## Failure Analysis
+
+RAG failures are classified by pipeline stage.
+
+### Retrieval Error
+
+The expected evidence is not present in the Top-K retrieval results.
+
+Potential causes:
+
+* Chunk size
+* Chunk overlap
+* Embedding quality
+* Query formulation
+* Top-K configuration
+* PDF extraction quality
+
+### Generation Error
+
+The correct evidence was retrieved, but the generated answer is incorrect.
+
+Potential causes:
+
+* Prompt instructions
+* Context formatting
+* Conflicting evidence
+* Model behavior
+* Output constraints
+
+### Source Attribution Error
+
+The answer is correct, but the cited evidence is incorrect.
+
+Potential causes:
+
+* Source-selection instructions
+* Duplicate evidence
+* Context formatting
+* Attribution logic
+
+The debugging order is intentionally:
+
+```text
+Retrieval
+ ↓
+Generation
+ ↓
+Source Attribution
+```
+
+Generation quality should not be diagnosed before verifying that the model received the correct evidence.
+
+---
+
+## Tool Calling Failure Analysis
+
+Tool-enabled workflows introduce additional failure categories.
+
+### Tool Selection Error
+
+A tool was required, but Claude did not request it.
+
+### Tool Input Error
+
+Claude selected the correct tool but provided invalid or incomplete arguments.
+
+### Tool Execution Error
+
+The application selected the tool successfully, but execution failed.
+
+### Generation Error
+
+The tool result was correct, but the final answer misrepresented the result.
+
+This follows the same design philosophy as RAG evaluation:
+
+```text
+Do not treat every failure as an LLM failure.
+
+Identify the failing pipeline stage first.
+```
+
+---
+
+## Observability
+
+Backend requests are recorded using structured JSON logging.
+
+Current observable fields include:
+
+* Request ID
+* HTTP method
+* Endpoint
+* HTTP status
+* Total latency
+* Retrieval latency
+* Top-K
+* Input tokens
+* Output tokens
+
+Example:
+
+```json
+{
+  "event": "research_stream_completed",
+  "request_id": "example-request-id",
+  "latency_ms": 1853.2,
+  "retrieval_ms": 41.8,
+  "top_k": 5,
+  "input_tokens": 3021,
+  "output_tokens": 182
+}
+```
+
+The goal is to make questions such as these answerable:
+
+```text
+Which request failed?
+
+Was retrieval slow?
+
+Was Claude generation slow?
+
+Was the context unusually large?
+
+Did token usage increase?
+```
+
+---
+
+## Security
+
+The project follows several security rules:
+
+* Anthropic API credentials exist only on the backend.
+* Secrets are loaded from environment variables.
+* `.env` is excluded from Git.
+* Raw filing PDFs are excluded from Git.
+* Generated embedding caches are excluded from Git.
+* API credentials are not intentionally written to application logs.
+* User prompts and raw source contents are not intentionally logged in full.
+* LLM-provided source IDs are validated against actual retrieval results.
+* Tool names are checked against an explicit allowlist.
+* Tool inputs are validated before execution.
+* Arbitrary model-generated code is never executed.
+* Internal exception details are not returned directly to clients.
+
+---
+
+## Design Principles
+
+Responsibilities are intentionally separated.
+
+```text
+LLM
+→ language understanding
+→ structured extraction
+→ grounded generation
+→ approved tool selection
+
+
+Python
+→ deterministic financial calculations
+→ validation
+→ business logic
+→ tool execution
+
+
+Embedding Model
+→ semantic retrieval
+
+
+FastAPI
+→ API boundary
+→ request validation
+→ error handling
+→ observability
+
+
+SwiftUI
+→ user experience
+→ state management
+→ networking
+```
+
+A deterministic operation is not delegated to an LLM when normal application code can perform it reliably.
 
 ---
 
@@ -545,17 +715,17 @@ Example:
 * Swift Concurrency
 * AsyncThrowingStream
 
-### Engineering
+### Applied AI
 
-* Structured Output
+* Structured Outputs
 * Retrieval-Augmented Generation
 * Semantic Search
+* Tool Calling
 * Golden Set Evaluation
-* Structured Logging
-* Request IDs
+* Answer Abstention
+* Source Attribution
 * Streaming
-* Dependency mocking
-* Git / GitHub
+* Structured Logging
 
 ---
 
@@ -568,7 +738,8 @@ investment-research-copilot/
 │   ├── b2-structured-extraction/
 │   ├── b3-vector-search/
 │   ├── b4-rag-evaluation/
-│   └── b5-fastapi-swiftui/
+│   ├── b5-fastapi-swiftui/
+│   └── b7-tool-calling/
 │
 ├── README.md
 ├── learning-log.md
@@ -576,9 +747,42 @@ investment-research-copilot/
 └── .gitignore
 ```
 
-The bootcamp directories preserve the incremental learning and implementation history.
+The bootcamp directories preserve the incremental implementation and learning history.
 
-The project is intended to evolve into a more integrated application structure as the production-oriented implementation matures.
+A more integrated product structure will be introduced as the MVP matures.
+
+---
+
+## Development Progress
+
+```text
+B1
+Financial Metrics
+      ↓
+B2
+Structured Extraction
+      ↓
+B3
+Vector Search
+      ↓
+B4
+RAG Evaluation
+      ↓
+B5
+FastAPI + SwiftUI
+      ↓
+B6
+Streaming + Observability
+      ↓
+B7
+Tool Calling
+      ↓
+B8
+Research Copilot MVP Integration
+      ↓
+B9
+Evaluation + Release
+```
 
 ---
 
@@ -592,7 +796,7 @@ git clone <repository-url>
 cd investment-research-copilot
 ```
 
-### 2. Create a Python virtual environment
+### 2. Create a virtual environment
 
 ```bash
 python -m venv .venv
@@ -600,11 +804,11 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-### 3. Install required packages
+### 3. Install dependencies
 
-Install the dependencies used by the relevant bootcamp modules.
+Install the dependencies required by the relevant modules.
 
-For example:
+Example:
 
 ```bash
 python -m pip install \
@@ -620,45 +824,45 @@ python -m pip install \
 
 ### 4. Configure environment variables
 
-Copy:
-
-```text
-.env.example
-```
-
-to:
+Create:
 
 ```text
 .env
 ```
 
-Then configure:
+using:
+
+```text
+.env.example
+```
+
+Expected variables:
 
 ```text
 ANTHROPIC_API_KEY=
 ANTHROPIC_MODEL=
 ```
 
-Do not commit `.env`.
+Never commit `.env`.
 
 ### 5. Prepare source documents
 
-Raw filing PDFs are intentionally excluded from Git.
+Raw company filing PDFs are intentionally excluded from Git.
 
-Place the required development document under the expected local data directory before running the ingestion pipeline.
+Place development documents in the expected local `data/raw` directory.
 
-### 6. Generate chunks and embeddings
+### 6. Build retrieval data
 
-Run the B3 pipeline to:
+Run the B3 ingestion pipeline:
 
 ```text
 PDF
  ↓
-pages
+Page Extraction
  ↓
-chunks
+Chunking
  ↓
-embeddings
+Embeddings
 ```
 
 ### 7. Start FastAPI
@@ -669,35 +873,60 @@ From the B5 backend directory:
 fastapi dev research_api/main.py
 ```
 
-The development API is available at:
+Development API:
 
 ```text
 http://127.0.0.1:8000
 ```
 
-FastAPI documentation is available at:
+API documentation:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
 
-### 8. Run the iOS application
+### 8. Run the iOS client
 
-Open the Xcode project under the B5 iOS directory and run the app using an iOS Simulator.
+Open the Xcode project under the B5 iOS directory and run it using an iOS Simulator.
 
-The development client is configured to communicate with the local FastAPI backend.
+### 9. Run the Tool Calling demo
+
+From:
+
+```text
+bootcamp/b7-tool-calling
+```
+
+run:
+
+```bash
+python -m tool_calling.cli
+```
+
+Example question:
+
+```text
+Previous revenue was 1000,
+current revenue was 1100,
+previous operating income was 110,
+and current operating income was 132.
+
+Calculate revenue growth,
+operating income growth,
+and current operating margin.
+```
 
 ---
 
 ## Testing
 
-Run Python tests with:
+Run unit tests with:
 
 ```bash
 python -m pytest
 ```
 
-Evaluation can first be smoke-tested with a small number of cases:
+RAG evaluation can first be smoke-tested with:
 
 ```bash
 python -m rag_evaluation.evaluator --limit 1
@@ -709,36 +938,19 @@ Then:
 python -m rag_evaluation.evaluator --limit 3
 ```
 
-Finally run the complete Golden Set:
+Finally:
 
 ```bash
 python -m rag_evaluation.evaluator
 ```
 
-This avoids unnecessary API calls while debugging the evaluation pipeline.
-
----
-
-## Security
-
-The project follows several basic security rules:
-
-* Anthropic API keys are stored only on the backend.
-* Secrets are loaded through environment variables.
-* `.env` is excluded from Git.
-* Raw filing PDFs are excluded from Git.
-* Embedding cache files are excluded from Git.
-* API keys are not intentionally written to logs.
-* LLM-provided source IDs are validated against actual retrieval results.
-* Internal exception details are not returned directly to clients.
-
-The iOS application never contains the Anthropic API key.
+Starting with a small evaluation run avoids unnecessary API calls while debugging.
 
 ---
 
 ## Data Handling
 
-Source documents remain local during the current development workflow unless explicitly sent to an external API as part of a model request.
+Source documents remain local during the current development workflow unless information is explicitly sent to an external model API as part of a request.
 
 Repository metadata may contain:
 
@@ -748,7 +960,7 @@ Repository metadata may contain:
 * Source URL
 * Retrieval date
 
-Raw documents are not committed to the public repository.
+Raw filing documents are intentionally excluded from the public repository.
 
 ---
 
@@ -756,7 +968,46 @@ Raw documents are not committed to the public repository.
 
 Current limitations include:
 
-* The evaluation set is intentionally small and manually curated.
-* PDF extraction quality may vary, especially for complex financial tables.
-* Character-based chunking is currently used as the baseline.
-* Semantic retrieval quality depends on the embedding
+* The Golden Set is intentionally small and manually curated.
+* PDF extraction may be imperfect for complex financial tables.
+* The current baseline uses character-based chunking.
+* Retrieval quality depends on the embedding model and document structure.
+* Rule-based answer evaluation does not capture every semantically equivalent response.
+* Streaming evidence represents retrieved context rather than guaranteed post-generation attribution.
+* Tool Calling is currently implemented as a focused preview and has not yet been fully integrated with the production RAG pipeline.
+* The initial tool supports only deterministic financial calculations.
+* The local development backend does not yet provide production authentication or rate limiting.
+* AI-generated responses may still be incomplete or incorrect.
+
+All generated information should be verified against original primary-source documents.
+
+---
+
+## Roadmap
+
+Next steps include:
+
+* Integrate RAG and Tool Calling into a unified research pipeline
+* Connect Tool Calling to the FastAPI application
+* Expose tool-assisted answers in SwiftUI
+* Expand the evaluation dataset
+* Add tool-use evaluation
+* Improve retrieval and chunking
+* Add more robust document ingestion
+* Add production authentication
+* Add rate limiting
+* Add cost monitoring
+* Improve observability
+* Prepare a complete MVP release
+
+---
+
+## Disclaimer
+
+This project is provided for educational and research purposes only.
+
+It does not constitute investment advice, financial advice, trading advice, or a recommendation to buy or sell any security.
+
+AI-generated responses may be incomplete or incorrect.
+
+Users should verify all financial information against original company filings and other authoritative primary sources before making any investment decision.

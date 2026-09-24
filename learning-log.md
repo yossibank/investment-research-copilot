@@ -307,3 +307,74 @@ post-generation attributionとは区別する。
 - Tool Schema
 - Tool Validation
 - Research Copilot MVP integration
+
+## 2026-09-24 - B7 Tool Calling
+
+### Learned
+
+- Claude client-side tool useを実装した
+- Tool schemaを定義した
+- Claudeのtool_use blockを処理した
+- Python側でToolを実行した
+- tool_resultをClaudeへ返した
+- Final AnswerまでAgent loopを実装した
+- Tool inputをPydanticでValidationした
+- 未登録Toolを拒否するallowlistを実装した
+- Tool実行回数に上限を設定した
+- Read-only toolから開始した
+
+### Tool
+
+calculate_financial_metrics
+
+Inputs:
+
+- previous_revenue
+- current_revenue
+- previous_operating_income
+- current_operating_income
+
+Outputs:
+
+- revenue_growth_percent
+- operating_income_growth_percent
+- previous_operating_margin_percent
+- current_operating_margin_percent
+
+### Important
+
+Claude does not execute the Python function directly.
+
+Claude requests a tool call.
+
+The application:
+
+1. validates the requested tool
+2. validates the tool arguments
+3. executes the Python function
+4. returns the result to Claude
+
+The LLM decides which approved capability to request.
+
+The application decides what capabilities are actually executable.
+
+### Error Layers
+
+- Tool Selection Error
+- Tool Input Error
+- Tool Execution Error
+- Generation Error
+
+### Next
+
+Integrate:
+
+RAG
++
+Tool Calling
++
+FastAPI
++
+SwiftUI
+
+into the Research Copilot MVP.
