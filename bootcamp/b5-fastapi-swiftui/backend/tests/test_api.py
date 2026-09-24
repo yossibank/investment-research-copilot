@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 from research_api.main import app
 from research_api.schemas import ResearchQueryResponse, ResearchSource
+from research_api.streaming_service import json_line
 
 client = TestClient(app)
 
@@ -81,3 +82,15 @@ def test_empty_question() -> None:
     )
 
     assert response.status_code == 422
+
+
+def test_json_line() -> None:
+    result = json_line(
+        {
+            "type": "text_delta",
+            "text": "営業利益",
+        }
+    )
+
+    assert result.endswith("\n")
+    assert '"type": "text_delta"' in result

@@ -41,6 +41,69 @@ struct APIClient {
             from: data
         )
     }
+
+    func researchStream(
+        question: String,
+        topK: Int = 5
+    ) -> AsyncThrowingStream<ResearchStreamEvent, Error> {
+        AsyncThrowingStream { continuation in
+            let task = Task {
+                do {
+                    let url = baseURL.appending(path: "research/stream")
+
+                    var request = URLRequest(url: url)
+                    request.httpMethod = "POST"
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+                    let encoder = JSONEncoder()
+                    encoder.keyEncodingStrategy = .convertToSnakeCase
+
+                    request.httpBody = try encoder.encode(
+                        ResearchQueryRequest(
+                            question: question,
+                            topK: topK
+                        )
+                    )
+
+                    let (bytes, response) = try await URLSession.shared.bytes(for: request)
+
+                    guard let httpResponse = response as? HTTPURLResponse else {
+                        throw APIError.invalidResponse
+                    }
+
+                    guard (200..<300).contains(httpResponse.statusCode) else {
+                        throw APIError.httpError(httpResponse.statusCode)
+                    }
+
+                    let decoder = JSONDecoder()
+                    decoder.keyDecodingStrategy = .convertFromSnakeCase
+
+                    for try await line in bytes.lines {
+                        guard !line.isEmpty else {
+                            continue
+                        }
+
+                        let data = Data(line.utf8)
+
+                        let event = try decoder.decode(
+                            ResearchStreamEvent.self,
+                            from: data
+                        )
+
+                        continuation.yield(event)
+                    }
+
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+
+            continuation.onTermination = { _ in
+                task.cancel()
+            }
+        }
+    }
 }
 
 enum APIError: LocalizedError {

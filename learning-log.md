@@ -261,3 +261,49 @@ Backend側でも実際のretrieval resultsに
 - Request ID
 - Latency計測
 - GitHub公開準備
+
+## 2026-09-24 - B6 Streaming / Observability / Release
+
+### Learned
+
+- Claude APIの回答をstreamingした
+- FastAPIからNDJSONをstreamingした
+- Swift URLSessionでstreamを逐次処理した
+- Request IDを追加した
+- JSON structured loggingを実装した
+- request latencyを計測した
+- retrieval latencyを計測した
+- input/output token usageを記録した
+- streaming中のerrorをeventとして扱った
+- GitHub公開前のsecret確認を行った
+
+### Important
+
+Streamingは必ずしも処理時間を短縮しない。
+
+最初のtokenを早く表示することで
+perceived latencyを改善する。
+
+Observabilityでは、
+
+request_id
+latency
+retrieval latency
+token usage
+error
+
+を記録し、
+問題を工程別に切り分けられる状態を作る。
+
+### Streaming Source Note
+
+Streaming endpointで表示するsourceは
+retrievalされたevidenceであり、
+post-generation attributionとは区別する。
+
+### Next
+
+- Read-only Tool Calling
+- Tool Schema
+- Tool Validation
+- Research Copilot MVP integration

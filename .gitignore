@@ -3,13 +3,12 @@
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# Generated embedding cache
 **/cache/
 
 # Secrets
 .env
-
-# macOS
-.DS_Store
 
 # Investment Research data
 *.pdf
