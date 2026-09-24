@@ -1,0 +1,14 @@
+pyproject.toml
+investment_tool_calling.egg-info/PKG-INFO
+investment_tool_calling.egg-info/SOURCES.txt
+investment_tool_calling.egg-info/dependency_links.txt
+investment_tool_calling.egg-info/requires.txt
+investment_tool_calling.egg-info/top_level.txt
+tests/test_financial_tool.py
+tests/test_registry.py
+tool_calling/__init__.py
+tool_calling/agent.py
+tool_calling/cli.py
+tool_calling/financial_tool.py
+tool_calling/models.py
+tool_calling/registry.py
