@@ -33,6 +33,14 @@ struct ResearchView: View {
                     }
                 }
 
+                if !viewModel.toolsUsed.isEmpty {
+                    Section("Tools Used") {
+                        ForEach(viewModel.toolsUsed, id: \.self) { tool in
+                            Label(tool, systemImage: "function")
+                        }
+                    }
+                }
+
                 if !viewModel.sources.isEmpty {
                     Section("Sources") {
                         ForEach(viewModel.sources) { source in

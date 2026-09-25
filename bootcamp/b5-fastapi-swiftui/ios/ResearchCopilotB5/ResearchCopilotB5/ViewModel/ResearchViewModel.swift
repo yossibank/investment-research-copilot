@@ -6,6 +6,7 @@ final class ResearchViewModel {
     var question = ""
     var answer = ""
     var sources = [ResearchSource]()
+    var toolsUsed: [String] = []
     var isLoading = false
     var errorMessage: String?
 
@@ -33,23 +34,30 @@ final class ResearchViewModel {
 //            let response = try await client.research(question: trimmedQuestion)
 //            answer = response.answer
 //            sources = response.sources
-            let stream = client.researchStream(question: trimmedQuestion)
 
-            for try await event in stream {
-                switch event.type {
-                case .metadata:
-                    sources = event.retrievedSources ?? []
+//            let stream = client.researchStream(question: trimmedQuestion)
+//
+//            for try await event in stream {
+//                switch event.type {
+//                case .metadata:
+//                    sources = event.retrievedSources ?? []
+//
+//                case .textDelta:
+//                    answer += event.text ?? ""
+//
+//                case .done:
+//                    break
+//
+//                case .error:
+//                    errorMessage = event.message ?? "Unknown error"
+//                }
+//            }
 
-                case .textDelta:
-                    answer += event.text ?? ""
+            let response = try await client.copilot(question: trimmedQuestion)
 
-                case .done:
-                    break
-
-                case .error:
-                    errorMessage = event.message ?? "Unknown error"
-                }
-            }
+            answer = response.answer
+            sources = response.sources
+            toolsUsed = response.toolsUsed
         } catch {
             errorMessage = error.localizedDescription
         }

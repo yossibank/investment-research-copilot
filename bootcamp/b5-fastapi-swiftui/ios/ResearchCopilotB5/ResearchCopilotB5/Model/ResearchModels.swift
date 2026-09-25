@@ -40,3 +40,10 @@ struct ResearchStreamEvent: Decodable {
         case error
     }
 }
+
+struct CopilotQueryResponse: Decodable {
+    let answer: String
+    let isAnswerable: Bool
+    let sources: [ResearchSource]
+    let toolsUsed: [String]
+}

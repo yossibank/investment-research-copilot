@@ -104,6 +104,45 @@ struct APIClient {
             }
         }
     }
+
+    func copilot(
+        question: String,
+        topK: Int = 5
+    ) async throws -> CopilotQueryResponse {
+        let url = baseURL.appending(path: "research/copilot")
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let encoder = JSONEncoder()
+        encoder.keyEncodingStrategy = .convertToSnakeCase
+
+        request.httpBody = try encoder.encode(
+            ResearchQueryRequest(
+                question: question,
+                topK: topK
+            )
+        )
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        guard (200..<300).contains(httpResponse.statusCode) else {
+            throw APIError.httpError(httpResponse.statusCode)
+        }
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+
+        return try decoder.decode(
+            CopilotQueryResponse.self,
+            from: data
+        )
+    }
 }
 
 enum APIError: LocalizedError {
