@@ -30,6 +30,10 @@ class JsonFormatter(logging.Formatter):
             "top_k",
             "input_tokens",
             "output_tokens",
+            # ツール用
+            "tool_name",
+            "tool_success",
+            "tool_latency_ms",
         ]
 
         for field in fields:

@@ -139,7 +139,10 @@ def run_copilot_query(
             max_tokens=1500,
             system=SYSTEM_PROMPT,
             tools=TOOLS,
-            tool_choice={"type": "auto", "disable_parallel_tool_use": True},
+            tool_choice={
+                "type": "auto",
+                "disable_parallel_tool_use": True,
+            },
             messages=messages,
             output_format=CopilotAnswer,
         )
@@ -178,7 +181,21 @@ def run_copilot_query(
                             "event": "tool_completed",
                             "request_id": request_id,
                             "content": result,
+                            "tool_name": block.name,
+                            "tool_success": True,
+                            "tool_latency_ms": round(tool_ms, 2),
                         },
+                    )
+
+                    if block.name not in tools_used:
+                        tools_used.append(block.name)
+
+                    tool_results.append(
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": block.id,
+                            "content": result,
+                        }
                     )
 
                 except Exception as error:
@@ -229,3 +246,62 @@ def run_copilot_query(
         )
 
     raise RuntimeError("Maximum tool rounds exceeded.")
+
+
+def build_copilot_response(
+    answer: CopilotAnswer,
+    results,
+    tools_used: list[str],
+) -> CopilotQueryResponse:
+    """
+    Claudeのsource_chunk_idsを本物のRetrieval Resultと照合する。
+    Claudeが存在しないIDを返してもAPI Responseには採用しない。
+    """
+
+    retrieved_by_id = {
+        chunk.chunk_id: (
+            chunk,
+            score,
+        )
+        for chunk, score in results
+    }
+
+    sources: list[ResearchSource] = []
+
+    seen_ids: set[str] = set()
+
+    for chunk_id in answer.source_chunk_ids:
+        if chunk_id in seen_ids:
+            continue
+
+        item = retrieved_by_id.get(chunk_id)
+
+        if item is None:
+            logger.warning(
+                "Claude returned unknown source chunk",
+                extra={"event": "invalid_source_id"},
+            )
+
+            continue
+
+        chunk, score = item
+
+        sources.append(
+            ResearchSource(
+                chunk_id=chunk.chunk_id,
+                company=chunk.company,
+                document_name=chunk.document_name,
+                page=chunk.page,
+                score=score,
+                source_url=chunk.source_url,
+            )
+        )
+
+        seen_ids.add(chunk_id)
+
+    return CopilotQueryResponse(
+        answer=answer.answer,
+        is_answerable=answer.is_answerable,
+        sources=sources,
+        tools_used=tools_used,
+    )
