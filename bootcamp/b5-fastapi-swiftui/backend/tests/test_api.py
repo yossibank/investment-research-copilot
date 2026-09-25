@@ -1,6 +1,10 @@
 from fastapi.testclient import TestClient
 from research_api.main import app
-from research_api.schemas import ResearchQueryResponse, ResearchSource
+from research_api.schemas import (
+    CopilotQueryResponse,
+    ResearchQueryResponse,
+    ResearchSource,
+)
 from research_api.streaming_service import json_line
 
 client = TestClient(app)
@@ -64,6 +68,54 @@ def test_research_query(monkeypatch) -> None:
     assert body["is_answerable"] is True
 
     assert body["answer"] == "営業利益は132億円です。"
+
+    assert body["sources"][0]["page"] == 4
+
+
+def test_copilot_endpoint(monkeypatch) -> None:
+    def fake_run_copilot_query(
+        question: str,
+        top_k: int,
+        request_id: str | None = None,
+    ) -> CopilotQueryResponse:
+        return CopilotQueryResponse(
+            answer="今期の営業利益率は12.0%です。",
+            is_answerable=True,
+            sources=[
+                ResearchSource(
+                    chunk_id="company-p4-c0",
+                    company="Example Holdings",
+                    document_name="2026年3月期 決算短信",
+                    page=4,
+                    score=0.88,
+                    source_url="https://example.com",
+                )
+            ],
+            tools_used=[
+                "calculate_financial_metrics",
+            ],
+        )
+
+    monkeypatch.setattr(
+        "research_api.main.run_copilot_query",
+        fake_run_copilot_query,
+    )
+
+    response = client.post(
+        "/research/copilot",
+        json={
+            "question": "今期の営業利益率は？",
+            "top_k": 5,
+        },
+    )
+
+    assert response.status_code == 200
+
+    body = response.json()
+
+    assert body["is_answerable"] is True
+
+    assert "calculate_financial_metrics" in body["tools_used"]
 
     assert body["sources"][0]["page"] == 4
 

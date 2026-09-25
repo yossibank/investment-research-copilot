@@ -1,4 +1,3 @@
-from email import message
 import logging
 import os
 from time import perf_counter

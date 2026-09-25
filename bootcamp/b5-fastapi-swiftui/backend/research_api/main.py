@@ -6,8 +6,9 @@ import anthropic
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 
+from .copilot import run_copilot_query
 from .logging_config import configure_logging
-from .schemas import ResearchQueryRequest, ResearchQueryResponse
+from .schemas import CopilotQueryResponse, ResearchQueryRequest, ResearchQueryResponse
 from .service import run_research_query
 from .streaming_service import stream_research_query
 
@@ -183,3 +184,59 @@ def research_stream(
         stream,
         media_type="application/x-ndjson",
     )
+
+
+@app.post(
+    "/research/copilot",
+    response_model=CopilotQueryResponse,
+)
+def research_copilot(
+    request_body: ResearchQueryRequest,
+    request: Request,
+) -> CopilotQueryResponse:
+    """
+    RAG
+      +
+    Tool Calling
+      +
+    Source Attribution
+    """
+
+    request_id = request.state.request_id
+
+    try:
+        return run_copilot_query(
+            question=request_body.question,
+            top_k=request_body.top_k,
+            request_id=request_id,
+        )
+
+    except anthropic.APITimeoutError:
+        raise HTTPException(
+            status_code=504,
+            detail="The AI service timed out.",
+        )
+
+    except anthropic.RateLimitError:
+        raise HTTPException(
+            status_code=503,
+            detail="The AI service is temporarily busy.",
+        )
+
+    except anthropic.APIConnectionError:
+        raise HTTPException(
+            status_code=503,
+            detail="The AI service is unavailable.",
+        )
+
+    except anthropic.APIStatusError:
+        raise HTTPException(
+            status_code=502,
+            detail="The upstream AI service returned an error.",
+        )
+
+    except RuntimeError:
+        raise HTTPException(
+            status_code=503,
+            detail="The research service could not complete the request.",
+        )
