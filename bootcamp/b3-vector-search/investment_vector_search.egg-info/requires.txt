@@ -1,4 +1,0 @@
-numpy
-pydantic
-pypdf
-sentence-transformers
