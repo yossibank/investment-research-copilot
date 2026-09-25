@@ -9,14 +9,15 @@ TOOLS = [
     {
         "name": "calculate_financial_metrics",
         "description": (
-            "Calculate deterministic financial "
-            "metrics from previous and current "
-            "revenue and operating income. "
-            "Use this tool when the user asks "
-            "for revenue growth, operating "
-            "income growth, or operating margin. "
-            "The tool performs arithmetic only "
-            "and does not modify any data."
+            "Calculate financial growth rates and "
+            "operating margins from available revenue "
+            "and operating income values. "
+            "Provide only values explicitly available "
+            "from the user or filing context. "
+            "Do not invent missing values. "
+            "Missing inputs may be omitted. "
+            "Metrics that cannot be calculated will return null. "
+            "This tool is read-only."
         ),
         "input_schema": {
             "type": "object",
@@ -38,12 +39,6 @@ TOOLS = [
                     "description": "Operating income for the current period.",
                 },
             },
-            "required": [
-                "previous_revenue",
-                "current_revenue",
-                "previous_operating_income",
-                "current_operating_income",
-            ],
         },
     }
 ]

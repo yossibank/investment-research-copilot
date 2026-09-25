@@ -31,3 +31,16 @@ def test_zero_previous_revenue() -> None:
 
     assert result.revenue_growth_percent is None
     assert result.previous_operating_margin_percent is None
+
+
+def test_current_margin_only() -> None:
+    tool_input = FinancialMetricsInput(
+        current_revenue=1100,
+        current_operating_income=132,
+    )
+
+    result = calculate_financial_metrics(tool_input)
+
+    assert result.current_operating_margin_percent == pytest.approx(12.0)
+    assert result.revenue_growth_percent is None
+    assert result.previous_operating_margin_percent is None

@@ -42,3 +42,10 @@ class ResearchQueryResponse(BaseModel):
     answer: str
     is_answerable: bool
     sources: list[ResearchSource]
+
+
+class CopilotQueryResponse(BaseModel):
+    answer: str
+    is_answerable: bool
+    sources: list[ResearchSource] = Field(default_factory=list)
+    tools_used: list[str] = Field(default_factory=list)

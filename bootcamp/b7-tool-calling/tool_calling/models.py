@@ -2,10 +2,10 @@ from pydantic import BaseModel
 
 
 class FinancialMetricsInput(BaseModel):
-    previous_revenue: float
-    current_revenue: float
-    previous_operating_income: float
-    current_operating_income: float
+    previous_revenue: float | None = None
+    current_revenue: float | None = None
+    previous_operating_income: float | None = None
+    current_operating_income: float | None = None
 
 
 class FinancialMetricsResult(BaseModel):

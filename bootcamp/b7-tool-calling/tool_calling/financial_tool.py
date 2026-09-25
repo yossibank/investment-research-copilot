@@ -51,21 +51,53 @@ def calculate_financial_metrics(
         計算自体はLLMにさせない。
     """
 
+    revenue_growth = None
+
+    if (
+        tool_input.previous_revenue is not None
+        and tool_input.current_revenue is not None
+    ):
+        revenue_growth = growth_rate(
+            tool_input.previous_revenue,
+            tool_input.current_revenue,
+        )
+
+    operating_income_growth = None
+
+    if (
+        tool_input.previous_operating_income is not None
+        and tool_input.current_operating_income is not None
+    ):
+        operating_income_growth = growth_rate(
+            tool_input.previous_operating_income,
+            tool_input.current_operating_income,
+        )
+
+    previous_margin = None
+
+    if (
+        tool_input.previous_revenue is not None
+        and tool_input.previous_operating_income is not None
+    ):
+        previous_margin = operating_margin(
+            tool_input.previous_revenue,
+            tool_input.previous_operating_income,
+        )
+
+    current_margin = None
+
+    if (
+        tool_input.current_revenue is not None
+        and tool_input.current_operating_income is not None
+    ):
+        current_margin = operating_margin(
+            tool_input.current_revenue,
+            tool_input.current_operating_income,
+        )
+
     return FinancialMetricsResult(
-        revenue_growth_percent=growth_rate(
-            tool_input.previous_revenue,
-            tool_input.current_revenue,
-        ),
-        operating_income_growth_percent=growth_rate(
-            tool_input.previous_operating_income,
-            tool_input.current_operating_income,
-        ),
-        previous_operating_margin_percent=operating_margin(
-            tool_input.previous_revenue,
-            tool_input.previous_operating_income,
-        ),
-        current_operating_margin_percent=operating_margin(
-            tool_input.current_revenue,
-            tool_input.current_operating_income,
-        ),
+        revenue_growth_percent=revenue_growth,
+        operating_income_growth_percent=operating_income_growth,
+        previous_operating_margin_percent=previous_margin,
+        current_operating_margin_percent=current_margin,
     )
