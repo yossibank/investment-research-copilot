@@ -74,7 +74,7 @@ flowchart LR
 | `backend/tests/` | バックエンドのテスト |
 | `data/` | 決算資料のメタデータと、検索用に加工したデータ |
 | `evaluation/` | 評価データと評価結果 |
-| `docs/` | 評価指標の説明、Python と Swift の対比 |
+| `docs/` | 評価指標の説明 |
 
 ## 動かし方
 
