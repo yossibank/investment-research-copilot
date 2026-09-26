@@ -45,11 +45,16 @@ flowchart LR
 
 ## 評価
 
-手作業で作った 20 問での結果です（[結果ファイル](evaluation/results/latest.json)）。
-
-| Recall@5 | Page Recall@5 | Answer Accuracy | Source Match Rate |
-| ---: | ---: | ---: | ---: |
-| 90% | 100% | 95% | 90% |
+| 指標 | mvp-baseline |
+| --- | ---: |
+| Recall@5（正解 chunk が検索結果にある） | 92% |
+| Page Recall@5 | 100% |
+| Answer Accuracy | 93% |
+| Source Match Rate | 93% |
+| Source 付与率（答えた回答に検証済み出典がある） | 100% |
+| ツール選択の正しさ | 97% |
+| レイテンシ p50 / p95 | 3.7 s / 9.1 s |
+| コスト | 未測定（30 問で入力 153,182 / 出力 6,377 トークン） |
 
 ## 使用技術
 
