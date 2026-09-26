@@ -1,3 +1,7 @@
+"""
+構造化抽出の結果の型。Claude の構造化出力の型としても使う。
+"""
+
 from pydantic import BaseModel
 
 

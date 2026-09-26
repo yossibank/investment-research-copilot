@@ -1,3 +1,7 @@
+"""
+Copilot の実行結果を、API のレスポンスの形に変換する。
+"""
+
 from ..agent.models import CopilotRun
 from ..agent.orchestrator import execute_copilot
 from .schemas import CopilotQueryResponse

@@ -1,3 +1,7 @@
+"""
+Copilot の回答と実行結果の型。API と評価の両方から使う。
+"""
+
 from dataclasses import dataclass
 from typing import Self
 

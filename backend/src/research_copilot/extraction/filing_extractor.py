@@ -1,3 +1,7 @@
+"""
+決算資料のテキストから、財務指標を構造化して抜き出す。Claude API を呼ぶ。
+"""
+
 import json
 
 import anthropic

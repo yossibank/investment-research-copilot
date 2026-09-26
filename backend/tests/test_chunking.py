@@ -1,3 +1,7 @@
+"""
+チャンク分割（chunk_text）のテスト。
+"""
+
 import pytest
 from research_copilot.retrieval.chunking import chunk_text
 

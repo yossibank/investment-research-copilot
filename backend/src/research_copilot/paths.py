@@ -1,3 +1,7 @@
+"""
+リポジトリ内のファイルとフォルダの場所をまとめたもの。
+"""
+
 from pathlib import Path
 
 # parents[0] → research_copilot/

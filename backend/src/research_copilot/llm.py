@@ -1,3 +1,7 @@
+"""
+Claude API のクライアントとモデル名の取得。API キーとモデル名は .env から読む。
+"""
+
 import os
 
 from anthropic import Anthropic

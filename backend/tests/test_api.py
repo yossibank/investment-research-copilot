@@ -1,3 +1,7 @@
+"""
+FastAPI のエンドポイントのテスト。Copilot の処理は偽物に差し替えるので、Claude API は呼ばない。
+"""
+
 from fastapi.testclient import TestClient
 from research_copilot.api.main import app
 from research_copilot.api.schemas import CopilotQueryResponse, ResearchSource

@@ -1,3 +1,7 @@
+"""
+決算資料・ページ・チャンクの型。
+"""
+
 from pydantic import BaseModel
 
 

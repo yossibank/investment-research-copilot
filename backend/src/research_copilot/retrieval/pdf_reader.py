@@ -1,3 +1,7 @@
+"""
+決算 PDF からページごとのテキストを取り出し、pages.json に保存する。
+"""
+
 import json
 from pathlib import Path
 

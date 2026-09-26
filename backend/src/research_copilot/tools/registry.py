@@ -1,3 +1,7 @@
+"""
+Claude に渡すツールの定義と、要求されたツールを実行する入口（許可リスト）。
+"""
+
 import json
 
 from anthropic.types import ToolParam

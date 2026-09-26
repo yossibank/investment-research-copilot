@@ -1,3 +1,7 @@
+"""
+ログを 1 行 1 JSON で出力するための設定。
+"""
+
 import json
 import logging
 from datetime import UTC, datetime

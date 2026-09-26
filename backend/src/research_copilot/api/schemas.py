@@ -1,3 +1,7 @@
+"""
+API のリクエストとレスポンスの型。iOS の ResearchModels.swift と対応する。
+"""
+
 from pydantic import BaseModel, Field, field_validator
 
 from ..agent.models import ResearchSource

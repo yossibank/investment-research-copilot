@@ -169,9 +169,12 @@ def evaluate(
 
 def main() -> None:
     """
-    python -m research_copilot.evaluation.evaluator --limit 1
-    python -m research_copilot.evaluation.evaluator --limit 3
-    python -m research_copilot.evaluation.evaluator --save-as mvp-baseline
+    コマンドラインから評価を実行する。
+
+    実行例:
+        python -m research_copilot.evaluation.evaluator --limit 1
+        python -m research_copilot.evaluation.evaluator --limit 3
+        python -m research_copilot.evaluation.evaluator --save-as mvp-baseline
     """
 
     parser = argparse.ArgumentParser()

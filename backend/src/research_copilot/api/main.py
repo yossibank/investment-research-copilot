@@ -1,3 +1,9 @@
+"""
+FastAPI のアプリ本体。エンドポイントと、全リクエスト共通のログを定義する。
+
+起動: fastapi dev backend/src/research_copilot/api/main.py
+"""
+
 import logging
 from time import perf_counter
 from uuid import uuid4

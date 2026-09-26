@@ -1,3 +1,7 @@
+"""
+Copilot の中心の処理（検索 → Claude → ツール実行 → 出典の検証）。Claude API を呼ぶ。
+"""
+
 import logging
 from time import perf_counter
 

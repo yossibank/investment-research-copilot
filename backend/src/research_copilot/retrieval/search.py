@@ -1,3 +1,7 @@
+"""
+質問と意味が近いチャンクを探すベクトル検索。Claude API は呼ばない。
+"""
+
 import numpy as np
 
 from ..paths import EMBEDDINGS_PATH

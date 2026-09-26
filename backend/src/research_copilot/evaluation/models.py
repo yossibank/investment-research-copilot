@@ -1,3 +1,7 @@
+"""
+評価データ（1 問）と採点結果の型。
+"""
+
 from pydantic import BaseModel, Field
 
 

@@ -1,3 +1,7 @@
+"""
+財務指標の計算のテスト。
+"""
+
 import pytest
 from research_copilot.tools.financial_tool import calculate_financial_metrics
 from research_copilot.tools.models import FinancialMetricsInput

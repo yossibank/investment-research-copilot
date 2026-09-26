@@ -1,3 +1,7 @@
+"""
+資料の中から文字列を含むチャンクを探す補助ツール。Claude API は呼ばない。
+"""
+
 import argparse
 
 from ..retrieval.chunking import load_chunks

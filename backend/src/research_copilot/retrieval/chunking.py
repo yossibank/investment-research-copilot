@@ -1,3 +1,7 @@
+"""
+ページのテキストをチャンクに分割し、chunks.json に保存・読み込みする。
+"""
+
 import json
 
 from ..paths import CHUNKS_PATH, DATA_DIR, PAGES_PATH

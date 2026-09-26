@@ -1,3 +1,7 @@
+"""
+財務指標（成長率・営業利益率）の計算。Claude が要求したときにツールとして実行される。
+"""
+
 from .models import FinancialMetricsInput, FinancialMetricsResult
 
 

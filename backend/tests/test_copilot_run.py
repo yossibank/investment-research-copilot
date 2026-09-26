@@ -1,3 +1,7 @@
+"""
+execute_copilot のテスト。検索と Claude API を偽物に差し替える。
+"""
+
 from types import SimpleNamespace
 
 from research_copilot.agent import orchestrator

@@ -1,3 +1,7 @@
+"""
+/research/stream の処理。検索結果と Claude の回答を NDJSON で少しずつ返す。Claude API を呼ぶ。
+"""
+
 import json
 import logging
 from collections.abc import Iterator

@@ -1,3 +1,7 @@
+"""
+財務計算ツールの入力と結果の型。
+"""
+
 from pydantic import BaseModel
 
 

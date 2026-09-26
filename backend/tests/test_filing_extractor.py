@@ -1,3 +1,7 @@
+"""
+構造化抽出の入力チェックのテスト。Claude API は呼ばない。
+"""
+
 import pytest
 from research_copilot.extraction.filing_extractor import extract_filing
 
