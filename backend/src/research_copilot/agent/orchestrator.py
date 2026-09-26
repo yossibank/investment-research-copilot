@@ -1,6 +1,8 @@
 import logging
 from time import perf_counter
 
+from anthropic.types import MessageParam, ToolResultBlockParam
+
 from ..llm import create_client, get_model
 from ..retrieval.models import Chunk
 from ..retrieval.search import search
@@ -109,7 +111,7 @@ def execute_copilot(
     # 2. Conversation
     # ==================================
 
-    messages: list[dict] = [
+    messages: list[MessageParam] = [
         {
             "role": "user",
             "content": (f"QUESTION:\n{question}\n\nCONTEXT:\n{context}"),
@@ -159,7 +161,7 @@ def execute_copilot(
                 }
             )
 
-            tool_results: list[dict] = []
+            tool_results: list[ToolResultBlockParam] = []
 
             for block in response.content:
                 if block.type != "tool_use":
@@ -290,16 +292,7 @@ def validate_sources(
 
         chunk, score = item
 
-        sources.append(
-            ResearchSource(
-                chunk_id=chunk.chunk_id,
-                company=chunk.company,
-                document_name=chunk.document_name,
-                page=chunk.page,
-                score=score,
-                source_url=chunk.source_url,
-            )
-        )
+        sources.append(ResearchSource.from_chunk(chunk, score))
 
         seen_ids.add(chunk_id)
 

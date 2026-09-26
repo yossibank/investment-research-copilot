@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Self
 
 from pydantic import BaseModel, Field
 
@@ -16,6 +17,21 @@ class ResearchSource(BaseModel):
     page: int
     score: float
     source_url: str
+
+    @classmethod
+    def from_chunk(cls, chunk: Chunk, score: float) -> Self:
+        """
+        検索結果の(Chunk, score)から出典を作る。
+        """
+
+        return cls(
+            chunk_id=chunk.chunk_id,
+            company=chunk.company,
+            document_name=chunk.document_name,
+            page=chunk.page,
+            score=score,
+            source_url=chunk.source_url,
+        )
 
 
 class CopilotAnswer(BaseModel):

@@ -6,6 +6,7 @@ from time import perf_counter
 import anthropic
 
 from ..agent.context import build_context
+from ..agent.models import ResearchSource
 from ..llm import create_client, get_model
 from ..retrieval.search import search
 
@@ -64,14 +65,7 @@ def stream_research_query(
 
         # 先にRetrieval結果を返す。
         retrieved_sources = [
-            {
-                "chunk_id": chunk.chunk_id,
-                "company": chunk.company,
-                "document_name": chunk.document_name,
-                "page": chunk.page,
-                "score": score,
-                "source_url": chunk.source_url,
-            }
+            ResearchSource.from_chunk(chunk, score).model_dump()
             for chunk, score in results
         ]
 

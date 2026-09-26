@@ -1,11 +1,12 @@
 import json
 
+from anthropic.types import ToolParam
 from pydantic import ValidationError
 
 from .financial_tool import calculate_financial_metrics
 from .models import FinancialMetricsInput
 
-TOOLS = [
+TOOLS: list[ToolParam] = [
     {
         "name": "calculate_financial_metrics",
         "description": (
