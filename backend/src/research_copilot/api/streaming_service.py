@@ -1,12 +1,12 @@
 import json
 import logging
-import os
 from collections.abc import Iterator
 from time import perf_counter
 
 import anthropic
 
-from ..rag.pipeline import build_context, create_client
+from ..llm import create_client, get_model
+from ..rag.pipeline import build_context
 from ..retrieval.search import search
 
 logger = logging.getLogger(__name__)
@@ -88,10 +88,7 @@ def stream_research_query(
         # Claude Streaming
         # ====================================
 
-        model = os.getenv("ANTHROPIC_MODEL")
-
-        if not model:
-            raise RuntimeError("ANTHROPIC_MODEL is not set.")
+        model = get_model()
 
         client = create_client()
 

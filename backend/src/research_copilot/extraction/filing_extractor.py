@@ -1,32 +1,12 @@
 import json
-import os
 
 import anthropic
-from anthropic import Anthropic
-from dotenv import load_dotenv
 
-from ..paths import DATA_DIR, ENV_PATH
+from ..llm import create_client, get_model
+from ..paths import DATA_DIR
 from .models import FilingExtraction
 
 SAMPLE_PATH = DATA_DIR / "samples" / "sample_filing.txt"
-
-load_dotenv(ENV_PATH)
-
-
-def create_client() -> Anthropic:
-    # os.getenv()
-    #
-    # OSの環境変数から値を取得する。
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-
-    if not api_key:
-        raise RuntimeError("ANTHROPIC_API_KEY is not set.")
-
-    return Anthropic(
-        api_key=api_key,
-        timeout=30.0,
-        max_retries=2,
-    )
 
 
 def extract_filing(text: str) -> FilingExtraction:
@@ -36,10 +16,7 @@ def extract_filing(text: str) -> FilingExtraction:
     if not text.strip():
         raise ValueError("Filing text must not be empty.")
 
-    model = os.getenv("ANTHROPIC_MODEL")
-
-    if not model:
-        raise RuntimeError("ANTHROPIC_MODEL is not set.")
+    model = get_model()
 
     client = create_client()
 

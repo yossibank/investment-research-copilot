@@ -1,11 +1,11 @@
 import logging
-import os
 from dataclasses import dataclass
 from time import perf_counter
 
 from pydantic import BaseModel, Field
 
-from ..rag.pipeline import build_context, create_client
+from ..llm import create_client, get_model
+from ..rag.pipeline import build_context
 from ..retrieval.models import Chunk
 from ..retrieval.search import search
 from ..tools.registry import TOOLS, execute_tool
@@ -117,10 +117,7 @@ def execute_copilot(
     if not question.strip():
         raise ValueError("Question must not be empty.")
 
-    model = os.getenv("ANTHROPIC_MODEL")
-
-    if not model:
-        raise RuntimeError("ANTHROPIC_MODEL is not set.")
+    model = get_model()
 
     # ==================================
     # 1. Retrieval
@@ -229,7 +226,7 @@ def execute_copilot(
                         }
                     )
 
-                except Exception as error:
+                except Exception:
                     tool_ms = (perf_counter() - tool_started) * 1000
 
                     logger.exception(
