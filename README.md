@@ -70,7 +70,7 @@ flowchart LR
 | ディレクトリ | 内容 |
 | --- | --- |
 | `ios/` | iOS アプリ（`ResearchCopilot.xcodeproj`） |
-| `backend/src/research_copilot/` | バックエンド。`api`（FastAPI）・`retrieval`（検索）・`rag`・`tools`（財務計算）・`extraction`（構造化抽出）・`evaluation` |
+| `backend/src/research_copilot/` | バックエンド。`api`（FastAPI）・`agent`（検索・Claude・ツールをつなぐ中心の処理）・`retrieval`（検索）・`tools`（財務計算）・`extraction`（構造化抽出）・`evaluation` |
 | `backend/tests/` | バックエンドのテスト |
 | `data/` | 決算資料のメタデータと、検索用に加工したデータ |
 | `evaluation/` | 評価データと評価結果 |

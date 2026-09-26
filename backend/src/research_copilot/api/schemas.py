@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field, field_validator
 
+from ..agent.models import ResearchSource
+
 
 class ResearchQueryRequest(BaseModel):
     question: str = Field(min_length=1, max_length=1000)
@@ -27,15 +29,6 @@ class ResearchQueryRequest(BaseModel):
             raise ValueError("Question must not be empty.")
 
         return value
-
-
-class ResearchSource(BaseModel):
-    chunk_id: str
-    company: str
-    document_name: str
-    page: int
-    score: float
-    source_url: str
 
 
 class CopilotQueryResponse(BaseModel):

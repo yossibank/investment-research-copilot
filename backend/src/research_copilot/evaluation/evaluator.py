@@ -8,7 +8,8 @@ from datetime import datetime
 from pathlib import Path
 from time import perf_counter
 
-from ..api.copilot import CopilotRun, execute_copilot
+from ..agent.models import CopilotRun
+from ..agent.orchestrator import execute_copilot
 from ..paths import EVALUATION_DIR, REPO_ROOT
 from ..retrieval.embeddings import MODEL_NAME
 from ..retrieval.search import search

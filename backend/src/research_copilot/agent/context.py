@@ -1,4 +1,7 @@
-def build_context(results) -> str:
+from ..retrieval.models import Chunk
+
+
+def build_context(results: list[tuple[Chunk, float]]) -> str:
     """
     Vector Searchの結果をClaudeへ渡すContext文字列へ変換する。
     下記の形式で結果を返す。

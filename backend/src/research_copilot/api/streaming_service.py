@@ -5,8 +5,8 @@ from time import perf_counter
 
 import anthropic
 
+from ..agent.context import build_context
 from ..llm import create_client, get_model
-from ..rag.pipeline import build_context
 from ..retrieval.search import search
 
 logger = logging.getLogger(__name__)

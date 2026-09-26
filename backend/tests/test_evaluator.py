@@ -2,8 +2,7 @@
 # B9: Copilot の実行結果を採点する（APIは呼ばない）
 # ============================================================
 
-from research_copilot.api.copilot import CopilotAnswer, CopilotRun
-from research_copilot.api.schemas import ResearchSource
+from research_copilot.agent.models import CopilotAnswer, CopilotRun, ResearchSource
 from research_copilot.evaluation.evaluator import percentile, score_case, summarize
 from research_copilot.evaluation.models import GoldenCase
 from research_copilot.retrieval.models import Chunk

@@ -1,11 +1,8 @@
 from types import SimpleNamespace
 
-from research_copilot.api import copilot
-from research_copilot.api.copilot import (
-    CopilotAnswer,
-    execute_copilot,
-    validate_sources,
-)
+from research_copilot.agent import orchestrator
+from research_copilot.agent.models import CopilotAnswer
+from research_copilot.agent.orchestrator import execute_copilot, validate_sources
 from research_copilot.retrieval.models import Chunk
 
 
@@ -89,12 +86,12 @@ def setup_fakes(monkeypatch, responses: list) -> FakeMessages:
         "test-model",
     )
     monkeypatch.setattr(
-        copilot,
+        orchestrator,
         "search",
         lambda question, top_k: RESULTS,
     )
     monkeypatch.setattr(
-        copilot,
+        orchestrator,
         "create_client",
         lambda: SimpleNamespace(messages=fake_messages),
     )
