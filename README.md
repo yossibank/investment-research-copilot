@@ -74,9 +74,7 @@ flowchart LR
 | `backend/tests/` | バックエンドのテスト |
 | `data/` | 決算資料のメタデータと、検索用に加工したデータ |
 | `evaluation/` | 評価データと評価結果 |
-| `docs/` | 評価指標の説明など |
-
-B1〜B8 の学習過程は [`bootcamp-final`](https://github.com/yossibank/investment-research-copilot/tree/bootcamp-final) タグで見られます。
+| `docs/` | 評価指標の説明、Python と Swift の対比 |
 
 ## 動かし方
 
