@@ -154,3 +154,39 @@ def test_execute_copilot_with_tool_sums_tokens(monkeypatch) -> None:
     assert run.tools_used == ["calculate_financial_metrics"]
     assert run.input_tokens == 180
     assert run.output_tokens == 30
+
+
+def test_execute_copilot_tool_failure(monkeypatch) -> None:
+    """
+    ツールの実行に失敗しても例外を外に出さず、Claude に失敗を伝えて続ける。
+    失敗したツールは tools_used に入れない。
+    """
+
+    bad_block = SimpleNamespace(
+        type="tool_use",
+        id="toolu_1",
+        name="calculate_financial_metrics",
+        input={"previous_revenue": "invalid"},  # 数値でないので入力の検証で失敗する
+    )
+
+    tool_use = SimpleNamespace(
+        stop_reason="tool_use",
+        content=[bad_block],
+        parsed_output=None,
+        usage=SimpleNamespace(input_tokens=80, output_tokens=10),
+    )
+
+    answer = CopilotAnswer(
+        answer="計算に必要な値を確認できませんでした。",
+        is_answerable=False,
+    )
+
+    fake = setup_fakes(
+        monkeypatch,
+        [tool_use, final_response(answer)],
+    )
+
+    run = execute_copilot("売上高成長率は？")
+
+    assert fake.calls == 2  # 失敗を伝えたあと、もう一度 Claude を呼んでいる
+    assert run.tools_used == []
