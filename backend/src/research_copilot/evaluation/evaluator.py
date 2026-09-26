@@ -1,12 +1,20 @@
 import argparse
 import json
+import math
+import os
+import subprocess
 import unicodedata
+from datetime import datetime
+from pathlib import Path
+from time import perf_counter
 
-from ..paths import EVALUATION_DIR
-from ..api.copilot import execute_copilot
+from ..api.copilot import CopilotRun, execute_copilot
+from ..paths import EVALUATION_DIR, REPO_ROOT
+from ..retrieval.embeddings import MODEL_NAME
+from ..retrieval.search import search
 from .models import EvalResult, GoldenCase
 
-GOLDEN_PATH = EVALUATION_DIR / "datasets" / "golden_20.jsonl"
+DEFAULT_DATASET = EVALUATION_DIR / "datasets" / "golden_mvp.jsonl"
 
 RESULTS_DIR = EVALUATION_DIR / "results"
 
@@ -33,66 +41,255 @@ def contains_required_terms(
 ) -> bool:
     """
     Claudeの回答に、Golden Setで指定した情報が全て含まれているか確認する。
-
-    例:
-        answer:
-            売上高は1,100億円です。
-
-        required_terms:
-            [
-                "売上高",
-                "1100億円"
-            ]
-
-        ↓
-
-        True
     """
 
     normalized_answer = normalize_text(answer)
 
-    # 全ての条件がTrueならTrue。
     return all(normalize_text(term) in normalized_answer for term in required_terms)
 
 
-def load_golden_cases() -> list[GoldenCase]:
+def load_golden_cases(path: Path = DEFAULT_DATASET) -> list[GoldenCase]:
     """
-    golden_20.jsonを読み込む。
-    JSONLなので1行ごとにGoldenCaseへ変換する。
+    JSONLを1行ずつGoldenCaseへ変換する。
     """
 
     cases: list[GoldenCase] = []
 
-    with GOLDEN_PATH.open(encoding="utf-8") as file:
+    with path.open(encoding="utf-8") as file:
         for line in file:
             line = line.strip()
 
             if not line:
                 continue
 
-            # JSON文字列
-            # ↓
-            # GoldenCase
             cases.append(GoldenCase.model_validate_json(line))
 
     return cases
 
 
-def evaluate(limit: int | None = None) -> None:
+# ============================================================
+# 1問の採点（APIを呼ばないのでテストできる）
+# ============================================================
+
+
+def score_case(case: GoldenCase, run: CopilotRun) -> EvalResult:
     """
-    Golden Setを使ってRAGを評価する。
+    Copilotの実行結果(CopilotRun)をGoldenCaseと照合して採点する。
 
-    limit=None
-        全件実行
-
-    limit=1
-        最初の1件だけ実行
-
-    limit=3
-        最初の3件だけ実行
+    出典は「Claudeが返したID」ではなく、
+    検索結果と照合した後の run.sources で採点する。
     """
 
-    cases = load_golden_cases()
+    retrieved_ids = [chunk.chunk_id for chunk, _ in run.results]
+    retrieved_pages = [chunk.page for chunk, _ in run.results]
+    source_ids = [source.chunk_id for source in run.sources]
+
+    answer = run.answer
+
+    if case.expected_answerable:
+        if case.evidence_id is None or case.evidence_page is None:
+            raise RuntimeError(f"{case.id}: evidence_id / evidence_page is required.")
+
+        retrieval_hit: bool | None = case.evidence_id in retrieved_ids
+        page_hit: bool | None = case.evidence_page in retrieved_pages
+
+        answer_correct = answer.is_answerable and contains_required_terms(
+            answer=answer.answer,
+            required_terms=case.required_terms,
+        )
+
+        source_hit = case.evidence_id in source_ids
+
+    else:
+        # 回答不能ケースは正解Chunkがないので検索の評価対象外。
+        retrieval_hit = None
+        page_hit = None
+
+        answer_correct = not answer.is_answerable
+
+        # 答えられないのに出典を付けていないか。
+        source_hit = len(source_ids) == 0
+
+    # ツール選択:
+    #   expected_tool あり → そのツールを使った
+    #   expected_tool なし → ツールを1つも使っていない
+    if case.expected_tool is None:
+        tool_correct = len(run.tools_used) == 0
+    else:
+        tool_correct = case.expected_tool in run.tools_used
+
+    return EvalResult(
+        id=case.id,
+        question=case.question,
+        category=case.category,
+        expected_answerable=case.expected_answerable,
+        actual_answerable=answer.is_answerable,
+        retrieval_hit=retrieval_hit,
+        page_hit=page_hit,
+        answer_correct=answer_correct,
+        source_hit=source_hit,
+        tool_correct=tool_correct,
+        answer=answer.answer,
+        expected_tool=case.expected_tool,
+        tools_used=run.tools_used,
+        retrieved_chunk_ids=retrieved_ids,
+        source_chunk_ids=source_ids,
+        expected_evidence_id=case.evidence_id,
+        latency_ms=round(run.total_ms, 1),
+        retrieval_ms=round(run.retrieval_ms, 1),
+        input_tokens=run.input_tokens,
+        output_tokens=run.output_tokens,
+    )
+
+
+def failed_result(case: GoldenCase, error: Exception) -> EvalResult:
+    """
+    APIエラーなどで実行できなかったケース。全指標を失敗として数える。
+    """
+
+    return EvalResult(
+        id=case.id,
+        question=case.question,
+        category=case.category,
+        expected_answerable=case.expected_answerable,
+        actual_answerable=False,
+        retrieval_hit=False if case.expected_answerable else None,
+        page_hit=False if case.expected_answerable else None,
+        answer_correct=False,
+        source_hit=False,
+        tool_correct=False,
+        answer="",
+        expected_tool=case.expected_tool,
+        expected_evidence_id=case.evidence_id,
+        error=f"{type(error).__name__}: {error}",
+    )
+
+
+# ============================================================
+# 集計（APIを呼ばないのでテストできる）
+# ============================================================
+
+
+def percentile(values: list[float], p: float) -> float | None:
+    """
+    nearest-rank法のパーセンタイル。p50 / p95 に使う。
+    """
+
+    if not values:
+        return None
+
+    ordered = sorted(values)
+    rank = math.ceil(p / 100 * len(ordered))
+
+    return ordered[max(rank, 1) - 1]
+
+
+def rate(flags: list[bool]) -> float | None:
+    if not flags:
+        return None
+
+    return sum(flags) / len(flags)
+
+
+def summarize(results: list[EvalResult]) -> dict:
+    retrieval_results = [r for r in results if r.retrieval_hit is not None]
+    answered = [r for r in results if r.actual_answerable]
+    latencies = [r.latency_ms for r in results if r.latency_ms is not None]
+
+    token_results = [r for r in results if r.input_tokens is not None]
+
+    by_category: dict[str, dict] = {}
+
+    for category in sorted({r.category for r in results}):
+        items = [r for r in results if r.category == category]
+        by_category[category] = {
+            "total": len(items),
+            "answer_accuracy": rate([r.answer_correct for r in items]),
+        }
+
+    return {
+        "total": len(results),
+        "errors": sum(r.error is not None for r in results),
+        "retrieval_cases": len(retrieval_results),
+        "recall_at_5": rate([bool(r.retrieval_hit) for r in retrieval_results]),
+        "page_recall_at_5": rate([bool(r.page_hit) for r in retrieval_results]),
+        "answer_accuracy": rate([r.answer_correct for r in results]),
+        "source_match_rate": rate([r.source_hit for r in results]),
+        # 「答えた」ケースのうち、検証後の出典が1つ以上付いた割合
+        "source_attribution_rate": rate(
+            [len(r.source_chunk_ids) > 0 for r in answered]
+        ),
+        "tool_selection_accuracy": rate([r.tool_correct for r in results]),
+        "latency_ms_p50": percentile(latencies, 50),
+        "latency_ms_p95": percentile(latencies, 95),
+        "input_tokens_total": sum(r.input_tokens or 0 for r in token_results)
+        if token_results
+        else None,
+        "output_tokens_total": sum(r.output_tokens or 0 for r in token_results)
+        if token_results
+        else None,
+        # 料金はモデルと時期で変わるため、ここでは計算しない。
+        "cost_usd": None,
+        "cost_note": "未測定（トークン数のみ記録）",
+        "by_category": by_category,
+    }
+
+
+# ============================================================
+# 実行
+# ============================================================
+
+
+def git_commit() -> str:
+    try:
+        commit = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+
+        dirty = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+
+        return f"{commit}-dirty" if dirty else commit
+
+    except (OSError, subprocess.CalledProcessError):
+        return "unknown"
+
+
+def display_path(path: Path) -> str:
+    try:
+        return path.relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return str(path)
+
+
+def warmup() -> float:
+    """
+    埋め込みモデルの読み込みを先に済ませる（Claude APIは呼ばない）。
+    初回だけ遅い時間をレイテンシの集計に混ぜないため。
+    """
+
+    started = perf_counter()
+    search("ウォームアップ", top_k=1)
+
+    return (perf_counter() - started) * 1000
+
+
+def evaluate(
+    dataset: Path = DEFAULT_DATASET,
+    limit: int | None = None,
+    top_k: int = 5,
+    save_as: str | None = None,
+) -> dict:
+    cases = load_golden_cases(dataset)
 
     if limit is not None:
         cases = cases[:limit]
@@ -100,204 +297,76 @@ def evaluate(limit: int | None = None) -> None:
     if not cases:
         raise RuntimeError("No golden cases found.")
 
+    if save_as and limit is not None:
+        raise RuntimeError("--save-as は全件実行（--limit なし）のときだけ使えます。")
+
+    warmup_ms = warmup()
+    print(f"warmup: {warmup_ms:.0f} ms")
+
     results: list[EvalResult] = []
 
     for index, case in enumerate(cases, start=1):
-        print(f"[{index}/{len(cases)}] {case.question}")
+        print(f"[{index}/{len(cases)}] {case.id} {case.question}")
 
-        # ====================================
-        # RAG実行
-        # ====================================
+        try:
+            run = execute_copilot(case.question, top_k=top_k)
+            results.append(score_case(case, run))
 
-        run = execute_copilot(case.question, top_k=5)
-        answer = run.answer
-        retrieved = run.results
+        except Exception as error:  # 1問の失敗で全体を止めない
+            print(f"  ! failed: {error}")
+            results.append(failed_result(case, error))
 
-        # Claudeが返したIDではなく、検索結果と照合した後の出典
-        source_ids = [source.chunk_id for source in run.sources]
-
-        # RetrievedされたChunk ID一覧
-        retrieved_ids = [chunk.chunk_id for chunk, _ in retrieved]
-
-        # Retrievalされたページ一覧
-        retrieved_pages = [chunk.page for chunk, _ in retrieved]
-
-        # ====================================
-        # Answerable Case
-        # ====================================
-
-        if case.expected_answerable:
-            # 回答可能問題には、正解となるevidenceが必要。
-            if case.evidence_id is None:
-                raise RuntimeError(f"{case.id}: evidence_id is required.")
-
-            if case.evidence_page is None:
-                raise RuntimeError(f"{case.id}: evidencce_page is required.")
-
-            # --------------------------------
-            # Retrieval Evaluation
-            # --------------------------------
-
-            # 正解ChunkがTop-5の中にあるか。
-            retrieval_hit = case.evidence_id in retrieved_ids
-
-            # 正解ページがTop-5の中にあるか。
-            page_hit = case.evidence_page in retrieved_pages
-
-            # --------------------------------
-            # Generation Evaluation
-            # --------------------------------
-
-            # Claudeが回答可能だと判断し、必須情報も全て回答に含んでいるか。
-            answer_correct = answer.is_answerable and contains_required_terms(
-                answer=answer.answer,
-                required_terms=case.required_terms,
-            )
-
-            # --------------------------------
-            # Source Attribution Evaluation
-            # --------------------------------
-
-            # Claude自身が指定したsourceの中に、Goldenの正解Chunkがあるか。
-            source_hit = case.evidence_id in source_ids
-
-        # ====================================
-        # Unanswerable Case
-        # ====================================
-
-        else:
-            # 回答不能なケースには正解Chunk自体が存在しない。
-            # そのため、Retrieval Recallの評価対象にしない。
-            retrieval_hit = None
-            page_hit = None
-
-            # 回答不能ケースでは、is_answerable=Falseなら正解
-            answer_correct = not answer.is_answerable
-
-            # 答えられないのに、架空のsourceを付けていないか確認する。
-            source_hit = len(source_ids) == 0
-
-        # ====================================
-        # 1問分の結果を保存
-        # ====================================
-
-        result = EvalResult(
-            id=case.id,
-            question=case.question,
-            expected_answerable=case.expected_answerable,
-            actual_answerable=answer.is_answerable,
-            retrieval_hit=retrieval_hit,
-            page_hit=page_hit,
-            answer_correct=answer_correct,
-            source_hit=source_hit,
-            answer=answer.answer,
-            retrieved_chunk_ids=retrieved_ids,
-            expected_evidence_id=case.evidence_id,
-        )
-
-        results.append(result)
-
-    # ========================================
-    # Metrics集計
-    # ========================================
-
-    total = len(results)
-
-    # Recall@5は正解Chunkが存在する問題だけで測る。
-    # 回答不能問題は除外する。
-    retrieval_results = [
-        result for result in results if result.retrieval_hit is not None
-    ]
-
-    if retrieval_results:
-        recall_at_5 = sum(
-            bool(result.retrieval_hit) for result in retrieval_results
-        ) / len(retrieval_results)
-
-        page_recall_at_5 = sum(
-            bool(result.page_hit) for result in retrieval_results
-        ) / len(retrieval_results)
-
-    else:
-        recall_at_5 = 0.0
-        page_recall_at_5 = 0.0
-
-    # Answer Accuracyは Answerable / Unanswerableを含めた全ケースで計算する。
-    answer_accuracy = sum(result.answer_correct for result in results) / total
-
-    # Source Match Rateも全ケースで計算する。
-    source_match_rate = sum(result.source_hit for result in results) / total
-
-    summary = {
-        "total": total,
-        "retrieval_cases": len(retrieval_results),
-        "recall_at_5": recall_at_5,
-        "page_recall_at_5": page_recall_at_5,
-        "answer_accuracy": answer_accuracy,
-        "source_match_rate": source_match_rate,
+    report = {
+        "metadata": {
+            "created_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+            "git_commit": git_commit(),
+            "model": os.getenv("ANTHROPIC_MODEL"),
+            "embedding_model": MODEL_NAME,
+            "top_k": top_k,
+            "dataset": display_path(dataset),
+            "limit": limit,
+            "warmup_ms": round(warmup_ms, 1),
+        },
+        "summary": summarize(results),
+        "results": [result.model_dump() for result in results],
     }
 
-    # ========================================
-    # 評価結果保存
-    # ========================================
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
-    RESULTS_DIR.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
+    text = json.dumps(report, ensure_ascii=False, indent=2)
 
-    (RESULTS_DIR / "latest.json").write_text(
-        json.dumps(
-            {
-                "summary": summary,
-                "results": [result.model_dump() for result in results],
-            },
-            ensure_ascii=False,
-            indent=2,
-        ),
-        encoding="utf-8",
-    )
+    (RESULTS_DIR / "latest.json").write_text(text + "\n", encoding="utf-8")
 
-    # ========================================
-    # Terminal表示
-    # ========================================
+    if save_as:
+        (RESULTS_DIR / f"{save_as}.json").write_text(text + "\n", encoding="utf-8")
 
     print("\n=== Evaluation Summary ===")
+    print(json.dumps(report["summary"], ensure_ascii=False, indent=2))
 
-    print(
-        json.dumps(
-            summary,
-            ensure_ascii=False,
-            indent=2,
-        )
-    )
+    return report
 
 
 def main() -> None:
     """
-    CLIからEvaluatorを実行する。
-
-    1件:
     python -m research_copilot.evaluation.evaluator --limit 1
-
-    3件
     python -m research_copilot.evaluation.evaluator --limit 3
-
-    全件
-    python -m research_copilot.evaluation.evaluator
+    python -m research_copilot.evaluation.evaluator --save-as mvp-baseline
     """
 
     parser = argparse.ArgumentParser()
-
-    parser.add_argument(
-        "--limit",
-        type=int,
-        default=None,
-    )
+    parser.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)
+    parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument("--top-k", type=int, default=5)
+    parser.add_argument("--save-as", type=str, default=None)
 
     args = parser.parse_args()
 
-    evaluate(limit=args.limit)
+    evaluate(
+        dataset=args.dataset.resolve(),
+        limit=args.limit,
+        top_k=args.top_k,
+        save_as=args.save_as,
+    )
 
 
 if __name__ == "__main__":
