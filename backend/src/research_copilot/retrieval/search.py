@@ -1,23 +1,9 @@
-from functools import lru_cache
-
 import numpy as np
-from sentence_transformers import SentenceTransformer
 
 from ..paths import EMBEDDINGS_PATH
 from .chunking import load_chunks
-from .embeddings import MODEL_NAME
+from .embeddings import embed_query
 from .models import Chunk
-
-
-@lru_cache(maxsize=1)
-def get_model() -> SentenceTransformer:
-    """
-    埋め込みモデルを初回だけ読み込み、2 回目以降は同じものを使い回す。
-
-    読み込みに数秒かかるため（評価の warmup で約 8 秒）、質問のたびには読み込まない。
-    """
-
-    return SentenceTransformer(MODEL_NAME)
 
 
 def search(
@@ -40,13 +26,7 @@ def search(
     if len(chunks) != len(embeddings):
         raise RuntimeError("Chunk count and embedding count do not match.")
 
-    model = get_model()
-
-    query_embedding = model.encode(
-        # 検索する側の文には "query: " を付ける（E5 系モデルの前提。embeddings.py を参照）。
-        [f"query: {query}"],
-        normalize_embeddings=True,
-    )[0]
+    query_embedding = embed_query(query)
 
     # どちらも正規化済みなので、内積がそのままコサイン類似度になる。
     # 形は (チャンク数, 384) @ (384,) → (チャンク数,)。
