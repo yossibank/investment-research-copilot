@@ -1,6 +1,6 @@
 import argparse
 
-from ..retrieval.search import load_chunks
+from ..retrieval.chunking import load_chunks
 
 
 def main() -> None:

@@ -1,16 +1,12 @@
-import json
 from functools import lru_cache
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
-from ..paths import CACHE_DIR
+from ..paths import EMBEDDINGS_PATH
+from .chunking import load_chunks
 from .embeddings import MODEL_NAME
 from .models import Chunk
-
-CHUNKS_PATH = CACHE_DIR / "chunks.json"
-
-EMBEDDINGS_PATH = CACHE_DIR / "embeddings.npy"
 
 
 # 関数の結果を覚える装飾
@@ -22,22 +18,6 @@ def get_model() -> SentenceTransformer:
     """
 
     return SentenceTransformer(MODEL_NAME)
-
-
-def load_chunks() -> list[Chunk]:
-    # JSON
-    #
-    # ↓
-    #
-    # Python list/dict
-    raw = json.loads(CHUNKS_PATH.read_text(encoding="utf-8"))
-
-    # dict
-    #
-    # ↓
-    #
-    # Chunk
-    return [Chunk.model_validate(item) for item in raw]
 
 
 def search(

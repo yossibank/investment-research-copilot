@@ -1,17 +1,13 @@
 import json
 
-from ..paths import CACHE_DIR, DATA_DIR
+from ..paths import CHUNKS_PATH, DATA_DIR, PAGES_PATH
 from .models import (
     Chunk,
     DocumentMetadata,
     PageText,
 )
 
-PAGES_PATH = DATA_DIR / "parsed" / "pages.json"
-
 METADATA_PATH = DATA_DIR / "metadata.json"
-
-CACHE_PATH = CACHE_DIR / "chunks.json"
 
 
 def chunk_text(
@@ -119,6 +115,16 @@ def build_chunks(
     return chunks
 
 
+def load_chunks() -> list[Chunk]:
+    """
+    main()で保存したchunks.jsonを読み込む。
+    """
+
+    raw = json.loads(CHUNKS_PATH.read_text(encoding="utf-8"))
+
+    return [Chunk.model_validate(item) for item in raw]
+
+
 def main() -> None:
     # ======================================================
     # pages.jsonを読み込む
@@ -166,13 +172,13 @@ def main() -> None:
     chunks = build_chunks(pages, metadata)
 
     # cache/フォルダがなければ作成する。
-    CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    CHUNKS_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     # ======================================================
     # Chunk → JSON保存
     # ======================================================
 
-    CACHE_PATH.write_text(
+    CHUNKS_PATH.write_text(
         json.dumps(
             [chunk.model_dump() for chunk in chunks],
             ensure_ascii=False,

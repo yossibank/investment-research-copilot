@@ -13,3 +13,9 @@ DATA_DIR = REPO_ROOT / "data"
 CACHE_DIR = DATA_DIR / "cache"
 
 EVALUATION_DIR = REPO_ROOT / "evaluation"
+
+PAGES_PATH = DATA_DIR / "parsed" / "pages.json"
+
+CHUNKS_PATH = CACHE_DIR / "chunks.json"
+
+EMBEDDINGS_PATH = CACHE_DIR / "embeddings.npy"

@@ -3,12 +3,10 @@ from pathlib import Path
 
 from pypdf import PdfReader
 
-from ..paths import DATA_DIR
+from ..paths import DATA_DIR, PAGES_PATH
 from .models import PageText
 
 PDF_PATH = DATA_DIR / "raw" / "filing.pdf"
-
-OUTPUT_PATH = DATA_DIR / "parsed" / "pages.json"
 
 
 def extract_pages(pdf_path: Path) -> list[PageText]:
@@ -60,7 +58,7 @@ def main() -> None:
     # 保存先フォルダを作る
     # ======================================================
 
-    # OUTPUT_PATH:
+    # PAGES_PATH:
     #
     # data/parsed/pages.json
     #
@@ -75,13 +73,13 @@ def main() -> None:
     #
     # exist_ok = True
     # → すでに存在していてもエラーにしない
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    PAGES_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     # ======================================================
     # PageText → JSON
     # ======================================================
 
-    OUTPUT_PATH.write_text(
+    PAGES_PATH.write_text(
         json.dumps(
             # リスト内包表記。
             #

@@ -1,32 +1,11 @@
-import json
-
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
-from ..paths import CACHE_DIR
+from ..paths import EMBEDDINGS_PATH
+from .chunking import load_chunks
 from .models import Chunk
 
-CHUNKS_PATH = CACHE_DIR / "chunks.json"
-
-EMBEDDINGS_PATH = CACHE_DIR / "embeddings.npy"
-
 MODEL_NAME = "intfloat/multilingual-e5-small"
-
-
-def load_chunks() -> list[Chunk]:
-    # JSON
-    #
-    # ↓
-    #
-    # Python list/dict
-    raw = json.loads(CHUNKS_PATH.read_text(encoding="utf-8"))
-
-    # dict
-    #
-    # ↓
-    #
-    # Chunk
-    return [Chunk.model_validate(item) for item in raw]
 
 
 def create_embeddings(chunks: list[Chunk]) -> np.ndarray:
