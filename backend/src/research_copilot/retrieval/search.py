@@ -4,8 +4,8 @@ from functools import lru_cache
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
-from .embeddings import MODEL_NAME
 from ..paths import CACHE_DIR
+from .embeddings import MODEL_NAME
 from .models import Chunk
 
 CHUNKS_PATH = CACHE_DIR / "chunks.json"

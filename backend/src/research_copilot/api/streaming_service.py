@@ -5,6 +5,7 @@ from collections.abc import Iterator
 from time import perf_counter
 
 import anthropic
+
 from ..rag.pipeline import build_context, create_client
 from ..retrieval.search import search
 

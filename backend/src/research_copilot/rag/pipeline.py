@@ -4,6 +4,7 @@ import os
 import anthropic
 from anthropic import Anthropic
 from dotenv import load_dotenv
+
 from ..paths import ENV_PATH
 from ..retrieval.search import search
 from .models import RagAnswer

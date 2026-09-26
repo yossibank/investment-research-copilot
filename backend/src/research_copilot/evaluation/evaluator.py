@@ -3,7 +3,7 @@ import json
 import unicodedata
 
 from ..paths import EVALUATION_DIR
-from ..rag.pipeline import answer_question
+from ..api.copilot import execute_copilot
 from .models import EvalResult, GoldenCase
 
 GOLDEN_PATH = EVALUATION_DIR / "datasets" / "golden_20.jsonl"
@@ -109,7 +109,12 @@ def evaluate(limit: int | None = None) -> None:
         # RAG実行
         # ====================================
 
-        answer, retrieved = answer_question(case.question, top_k=5)
+        run = execute_copilot(case.question, top_k=5)
+        answer = run.answer
+        retrieved = run.results
+
+        # Claudeが返したIDではなく、検索結果と照合した後の出典
+        source_ids = [source.chunk_id for source in run.sources]
 
         # RetrievedされたChunk ID一覧
         retrieved_ids = [chunk.chunk_id for chunk, _ in retrieved]
@@ -154,7 +159,7 @@ def evaluate(limit: int | None = None) -> None:
             # --------------------------------
 
             # Claude自身が指定したsourceの中に、Goldenの正解Chunkがあるか。
-            source_hit = case.evidence_id in answer.source_chunk_ids
+            source_hit = case.evidence_id in source_ids
 
         # ====================================
         # Unanswerable Case
@@ -170,9 +175,7 @@ def evaluate(limit: int | None = None) -> None:
             answer_correct = not answer.is_answerable
 
             # 答えられないのに、架空のsourceを付けていないか確認する。
-            source_hit = (
-                len(answer.source_chunk_ids) == 0 and len(answer.source_pages) == 0
-            )
+            source_hit = len(source_ids) == 0
 
         # ====================================
         # 1問分の結果を保存

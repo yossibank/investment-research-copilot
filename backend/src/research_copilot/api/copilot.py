@@ -1,9 +1,12 @@
 import logging
 import os
+from dataclasses import dataclass
 from time import perf_counter
 
 from pydantic import BaseModel, Field
+
 from ..rag.pipeline import build_context, create_client
+from ..retrieval.models import Chunk
 from ..retrieval.search import search
 from ..tools.registry import TOOLS, execute_tool
 from .schemas import CopilotQueryResponse, ResearchSource
@@ -15,6 +18,25 @@ class CopilotAnswer(BaseModel):
     answer: str
     is_answerable: bool
     source_chunk_ids: list[str] = Field(default_factory=list)
+
+
+@dataclass
+class CopilotRun:
+    """
+    Copilotを一回実行した結果(評価用の詳しい形)。
+
+    APIはこの中から answer / sources / tools_used だけを返し、
+    評価は検索結果・レイテンシ・トークン数までを使う。
+    """
+
+    answer: CopilotAnswer
+    results: list[tuple[Chunk, float]]
+    sources: list[ResearchSource]
+    tools_used: list[str]
+    retrieval_ms: float
+    total_ms: float
+    input_tokens: int
+    output_tokens: int
 
 
 SYSTEM_PROMPT = """
@@ -61,12 +83,12 @@ Rules:
 """
 
 
-def run_copilot_query(
+def execute_copilot(
     question: str,
     top_k: int = 5,
     request_id: str | None = None,
     max_tool_rounds: int = 3,
-) -> CopilotQueryResponse:
+) -> CopilotRun:
     """
     Research CopilotのMain Orchestrator。
 
@@ -104,11 +126,13 @@ def run_copilot_query(
     # 1. Retrieval
     # ==================================
 
-    retrueval_started = perf_counter()
+    started = perf_counter()
+
+    retrieval_started = perf_counter()
 
     results = search(question, top_k=top_k)
 
-    retrieval_ms = (perf_counter() - retrueval_started) * 1000
+    retrieval_ms = (perf_counter() - retrieval_started) * 1000
 
     context = build_context(results)
 
@@ -127,6 +151,9 @@ def run_copilot_query(
 
     tools_used: list[str] = []
 
+    input_tokens = 0
+    output_tokens = 0
+
     # ==================================
     # 3. Tool Loop
     # ==================================
@@ -144,6 +171,12 @@ def run_copilot_query(
             messages=messages,
             output_format=CopilotAnswer,
         )
+
+        usage = getattr(response, "usage", None)
+
+        if usage is not None:
+            input_tokens += usage.input_tokens
+            output_tokens += usage.output_tokens
 
         # ==============================
         # Tool Request
@@ -237,19 +270,56 @@ def run_copilot_query(
         if answer is None:
             raise RuntimeError("Claude returned no parse CopilotAnswer.")
 
-        return build_copilot_response(
+        return CopilotRun(
             answer=answer,
             results=results,
+            sources=validate_sources(answer, results),
             tools_used=tools_used,
+            retrieval_ms=retrieval_ms,
+            total_ms=(perf_counter() - started) * 1000,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
         )
 
     raise RuntimeError("Maximum tool rounds exceeded.")
 
 
-def build_copilot_response(
+def to_api_response(run: CopilotRun) -> CopilotQueryResponse:
+    """
+    評価用のCopilotRunを、APIで返す形へ変換する。
+    """
+
+    return CopilotQueryResponse(
+        answer=run.answer.answer,
+        is_answerable=run.answer.is_answerable,
+        sources=run.sources,
+        tools_used=run.tools_used,
+    )
+
+
+def run_copilot_query(
+    question: str,
+    top_k: int = 5,
+    request_id: str | None = None,
+    max_tool_rounds: int = 3,
+) -> list[ResearchSource]:
+    """
+    API用の入口。実行はexecute_copilotに任せ、API用の形へ変換するだけ。
+    """
+
+    run = execute_copilot(
+        question=question,
+        top_k=top_k,
+        request_id=request_id,
+        max_tool_rounds=max_tool_rounds,
+    )
+
+    return to_api_response(run)
+
+
+def validate_sources(
     answer: CopilotAnswer,
-    results,
-    tools_used: list[str],
+    results: list[tuple[Chunk, float]],
 ) -> CopilotQueryResponse:
     """
     Claudeのsource_chunk_idsを本物のRetrieval Resultと照合する。
@@ -297,9 +367,4 @@ def build_copilot_response(
 
         seen_ids.add(chunk_id)
 
-    return CopilotQueryResponse(
-        answer=answer.answer,
-        is_answerable=answer.is_answerable,
-        sources=sources,
-        tools_used=tools_used,
-    )
+    return sources
