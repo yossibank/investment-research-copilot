@@ -19,7 +19,7 @@ MODEL_NAME = "intfloat/multilingual-e5-small"
 
 @lru_cache(maxsize=1)
 def get_embedding_model() -> SentenceTransformer:
-    """ "
+    """
     埋め込みモデルを初回だけ読み込み、2 回目以降は同じものを使い回す。
 
     読み込みに数秒かかるため（評価の warmup で約 8 秒）、質問のたびには読み込まない。
@@ -60,17 +60,7 @@ def create_embeddings(chunks: list[Chunk]) -> np.ndarray:
     全チャンクを埋め込みベクトルに変換する。戻り値の形は (チャンク数, 384)。
     """
 
-    model = SentenceTransformer(MODEL_NAME)
-
-    texts = [f"passage: {chunk.text}" for chunk in chunks]
-
-    embeddings = model.encode(
-        texts,
-        normalize_embeddings=True,
-        show_progress_bar=True,
-    )
-
-    return np.asarray(embeddings)
+    return embed_passages([chunk.text for chunk in chunks], show_progress_bar=True)
 
 
 def main() -> None:
