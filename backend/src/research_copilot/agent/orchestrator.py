@@ -1,7 +1,7 @@
 import logging
 from time import perf_counter
 
-from anthropic.types import MessageParam, ToolResultBlockParam
+from anthropic.types import MessageParam, ToolResultBlockParam, ToolUseBlock
 
 from ..llm import create_client, get_model
 from ..retrieval.models import Chunk
@@ -44,11 +44,9 @@ def execute_copilot(
 
     started = perf_counter()
 
-    retrieval_started = perf_counter()
-
     results = search(question, top_k=top_k)
 
-    retrieval_ms = (perf_counter() - retrieval_started) * 1000
+    retrieval_ms = (perf_counter() - started) * 1000
 
     # ==================================
     # 2. Claude に渡すメッセージ
@@ -86,11 +84,8 @@ def execute_copilot(
             output_format=CopilotAnswer,
         )
 
-        usage = getattr(response, "usage", None)
-
-        if usage is not None:
-            input_tokens += usage.input_tokens
-            output_tokens += usage.output_tokens
+        input_tokens += response.usage.input_tokens
+        output_tokens += response.usage.output_tokens
 
         # ==============================
         # Claude がツールを要求した場合
@@ -110,61 +105,12 @@ def execute_copilot(
                 if block.type != "tool_use":
                     continue
 
-                tool_started = perf_counter()
+                tool_result, succeeded = _run_tool(block, request_id)
 
-                try:
-                    result = execute_tool(
-                        name=block.name,
-                        tool_input=block.input,
-                    )
+                tool_results.append(tool_result)
 
-                    tool_ms = (perf_counter() - tool_started) * 1000
-
-                    logger.info(
-                        "copilot tool completed",
-                        extra={
-                            "event": "tool_completed",
-                            "request_id": request_id,
-                            "tool_output": result,
-                            "tool_name": block.name,
-                            "tool_success": True,
-                            "tool_latency_ms": round(tool_ms, 2),
-                        },
-                    )
-
-                    if block.name not in tools_used:
-                        tools_used.append(block.name)
-
-                    tool_results.append(
-                        {
-                            "type": "tool_result",
-                            "tool_use_id": block.id,
-                            "content": result,
-                        }
-                    )
-
-                except Exception:
-                    tool_ms = (perf_counter() - tool_started) * 1000
-
-                    logger.exception(
-                        "copilot tool failed",
-                        extra={
-                            "event": "tool_failed",
-                            "request_id": request_id,
-                            "tool_name": block.name,
-                            "tool_success": False,
-                            "tool_latency_ms": round(tool_ms, 2),
-                        },
-                    )
-
-                    tool_results.append(
-                        {
-                            "type": "tool_result",
-                            "tool_use_id": block.id,
-                            "content": "Tool execution failed.",
-                            "is_error": True,
-                        }
-                    )
+                if succeeded and block.name not in tools_used:
+                    tools_used.append(block.name)
 
             messages.append(
                 {
@@ -198,6 +144,73 @@ def execute_copilot(
     raise RuntimeError("Maximum tool rounds exceeded.")
 
 
+def _run_tool(
+    block: ToolUseBlock,
+    request_id: str | None,
+) -> tuple[ToolResultBlockParam, bool]:
+    """
+    Claude が要求したツールを 1 つ実行し、Claude に返す tool_result を作る。
+
+    ツールが失敗しても例外は外に出さず、is_error 付きの tool_result にして
+    Claude に失敗を伝える。戻り値の 2 つ目は、実行に成功したかどうか。
+    """
+
+    tool_started = perf_counter()
+
+    try:
+        result = execute_tool(
+            name=block.name,
+            tool_input=block.input,
+        )
+
+    except Exception:
+        tool_ms = (perf_counter() - tool_started) * 1000
+
+        logger.exception(
+            "copilot tool failed",
+            extra={
+                "event": "tool_failed",
+                "request_id": request_id,
+                "tool_name": block.name,
+                "tool_success": False,
+                "tool_latency_ms": round(tool_ms, 2),
+            },
+        )
+
+        return (
+            {
+                "type": "tool_result",
+                "tool_use_id": block.id,
+                "content": "Tool execution failed.",
+                "is_error": True,
+            },
+            False,
+        )
+
+    tool_ms = (perf_counter() - tool_started) * 1000
+
+    logger.info(
+        "copilot tool completed",
+        extra={
+            "event": "tool_completed",
+            "request_id": request_id,
+            "tool_output": result,
+            "tool_name": block.name,
+            "tool_success": True,
+            "tool_latency_ms": round(tool_ms, 2),
+        },
+    )
+
+    return (
+        {
+            "type": "tool_result",
+            "tool_use_id": block.id,
+            "content": result,
+        },
+        True,
+    )
+
+
 def validate_sources(
     answer: CopilotAnswer,
     results: list[tuple[Chunk, float]],
@@ -208,13 +221,7 @@ def validate_sources(
     検索結果にない ID（Claude が作り出した ID）と重複は捨てる。
     """
 
-    retrieved_by_id = {
-        chunk.chunk_id: (
-            chunk,
-            score,
-        )
-        for chunk, score in results
-    }
+    retrieved_by_id = {chunk.chunk_id: (chunk, score) for chunk, score in results}
 
     sources: list[ResearchSource] = []
 

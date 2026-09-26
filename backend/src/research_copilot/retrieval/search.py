@@ -34,17 +34,7 @@ def search(
 
     top_indices = np.argsort(scores)[::-1][:top_k]
 
-    results: list[tuple[Chunk, float]] = []
-
-    for index in top_indices:
-        results.append(
-            (
-                chunks[int(index)],
-                float(scores[index]),
-            )
-        )
-
-    return results
+    return [(chunks[int(index)], float(scores[index])) for index in top_indices]
 
 
 def main() -> None:
