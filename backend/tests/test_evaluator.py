@@ -3,8 +3,9 @@ Copilot の実行結果の採点と集計のテスト。Claude API は呼ばな�
 """
 
 from research_copilot.agent.models import CopilotAnswer, CopilotRun, ResearchSource
-from research_copilot.evaluation.evaluator import percentile, score_case, summarize
+from research_copilot.evaluation.metrics import percentile, summarize
 from research_copilot.evaluation.models import GoldenCase
+from research_copilot.evaluation.scoring import score_case
 from research_copilot.retrieval.models import Chunk
 
 
