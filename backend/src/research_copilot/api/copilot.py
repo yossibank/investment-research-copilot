@@ -211,7 +211,7 @@ def execute_copilot(
                         extra={
                             "event": "tool_completed",
                             "request_id": request_id,
-                            "content": result,
+                            "tool_output": result,
                             "tool_name": block.name,
                             "tool_success": True,
                             "tool_latency_ms": round(tool_ms, 2),
@@ -302,7 +302,7 @@ def run_copilot_query(
     top_k: int = 5,
     request_id: str | None = None,
     max_tool_rounds: int = 3,
-) -> list[ResearchSource]:
+) -> CopilotQueryResponse:
     """
     API用の入口。実行はexecute_copilotに任せ、API用の形へ変換するだけ。
     """
@@ -320,7 +320,7 @@ def run_copilot_query(
 def validate_sources(
     answer: CopilotAnswer,
     results: list[tuple[Chunk, float]],
-) -> CopilotQueryResponse:
+) -> list[ResearchSource]:
     """
     Claudeのsource_chunk_idsを本物のRetrieval Resultと照合する。
     Claudeが存在しないIDを返してもAPI Responseには採用しない。

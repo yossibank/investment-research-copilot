@@ -34,6 +34,7 @@ class JsonFormatter(logging.Formatter):
             "tool_name",
             "tool_success",
             "tool_latency_ms",
+            "tool_output",
         ]
 
         for field in fields:
