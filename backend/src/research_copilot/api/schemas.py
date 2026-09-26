@@ -38,12 +38,6 @@ class ResearchSource(BaseModel):
     source_url: str
 
 
-class ResearchQueryResponse(BaseModel):
-    answer: str
-    is_answerable: bool
-    sources: list[ResearchSource]
-
-
 class CopilotQueryResponse(BaseModel):
     answer: str
     is_answerable: bool

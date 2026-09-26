@@ -18,12 +18,6 @@ struct ResearchSource: Decodable, Identifiable {
     }
 }
 
-struct ResearchQueryResponse: Decodable {
-    let answer: String
-    let isAnswerable: Bool
-    let sources: [ResearchSource]
-}
-
 struct ResearchStreamEvent: Decodable {
     let type: EventType
     let text: String?

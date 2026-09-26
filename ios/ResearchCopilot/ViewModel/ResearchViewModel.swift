@@ -31,10 +31,6 @@ final class ResearchViewModel {
         }
 
         do {
-//            let response = try await client.research(question: trimmedQuestion)
-//            answer = response.answer
-//            sources = response.sources
-
 //            let stream = client.researchStream(question: trimmedQuestion)
 //
 //            for try await event in stream {

@@ -8,8 +8,7 @@ from fastapi.responses import StreamingResponse
 
 from .copilot import run_copilot_query
 from .logging_config import configure_logging
-from .schemas import CopilotQueryResponse, ResearchQueryRequest, ResearchQueryResponse
-from .service import run_research_query
+from .schemas import CopilotQueryResponse, ResearchQueryRequest
 from .streaming_service import stream_research_query
 
 configure_logging()
@@ -104,62 +103,6 @@ def health() -> dict[str, str]:
     """
 
     return {"status": "ok"}
-
-
-@app.post(
-    "/research/query",
-    response_model=ResearchQueryResponse,
-)
-def research_query(request: ResearchQueryRequest) -> ResearchQueryResponse:
-    """
-    Research CopilotのメインEndpoint。
-
-    SwiftUI
-        ↓
-    POST /research/query
-        ↓
-    B4 RAG
-        ↓
-    Claude
-        ↓
-    JSON Response
-    """
-
-    try:
-        return run_research_query(
-            question=request.question,
-            top_k=request.top_k,
-        )
-
-    except anthropic.APITimeoutError:
-        raise HTTPException(
-            status_code=504,
-            detail="The AI service timed out",
-        )
-
-    except anthropic.RateLimitError:
-        raise HTTPException(
-            status_code=503,
-            detail="The AI service is temporarily busy.",
-        )
-
-    except anthropic.APIConnectionError:
-        raise HTTPException(
-            status_code=503,
-            detail="The AI service is unavailable.",
-        )
-
-    except anthropic.APIStatusError:
-        raise HTTPException(
-            status_code=502,
-            detail="The upstream AI service returned an error.",
-        )
-
-    except RuntimeError:
-        raise HTTPException(
-            status_code=503,
-            detail="The research service is not configured.",
-        )
 
 
 @app.post(
