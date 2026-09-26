@@ -5,8 +5,8 @@ from time import perf_counter
 
 import anthropic
 
-from ..agent.context import build_context
 from ..agent.models import ResearchSource
+from ..agent.prompts import STREAMING_SYSTEM_PROMPT, build_user_message
 from ..llm import create_client, get_model
 from ..retrieval.search import search
 
@@ -58,8 +58,6 @@ def stream_research_query(
 
         retrieval_ms = (perf_counter() - retrieval_started) * 1000
 
-        context = build_context(results)
-
         # Claude の回答より先に、検索結果を返しておく。
         retrieved_sources = [
             ResearchSource.from_chunk(chunk, score).model_dump()
@@ -83,25 +81,14 @@ def stream_research_query(
 
         client = create_client()
 
-        system_prompt = (
-            "You are an investment research assistant. "
-            "Use ONLY the supplied CONTEXT. "
-            "Do not guess missing information. "
-            "If the answer cannnot be confirmed "
-            "from the context, clearly say so. "
-            "Preserve numerical values and units. "
-            "Do not provide investment advice "
-            "or definitive stock-price predictions."
-        )
-
         with client.messages.stream(
             model=model,
             max_tokens=1024,
-            system=system_prompt,
+            system=STREAMING_SYSTEM_PROMPT,
             messages=[
                 {
                     "role": "user",
-                    "content": (f"QUESTION:\n{question}\n\nCONTEXT:\n{context}"),
+                    "content": build_user_message(question, results),
                 }
             ],
         ) as stream:

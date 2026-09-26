@@ -7,54 +7,10 @@ from ..llm import create_client, get_model
 from ..retrieval.models import Chunk
 from ..retrieval.search import search
 from ..tools.registry import TOOLS, execute_tool
-from .context import build_context
 from .models import CopilotAnswer, CopilotRun, ResearchSource
+from .prompts import SYSTEM_PROMPT, build_user_message
 
 logger = logging.getLogger(__name__)
-
-
-SYSTEM_PROMPT = """
-You are an investment research copilot.
-
-You answer questions using company filing evidence
-provided in CONTEXT.
-
-Rules:
-
-1. Use ONLY facts explicitly present in CONTEXT
-   or values explicitly provided by the user.
-
-2. Never invent missing financial values.
-
-3. When exact financial arithmetic is required,
-   use an available financial calculation tool
-   instead of calculating it yourself.
-
-4. Tool arguments must come only from explicit
-   values in CONTEXT or the user's question.
-
-5. Do not call a financial tool if required
-   inputs are missing.
-
-6. If the available evidence is insufficient,
-   set is_answerable to false.
-
-7. If is_answerable is false,
-   source_chunk_ids must be empty unless the
-   sources directly explain why the question
-   cannot be answered.
-
-8. source_chunk_ids must contain only CHUNK_IDs
-   supplied in CONTEXT.
-
-9. Preserve financial periods, values, and units.
-
-10. Distinguish actual results from company guidance.
-
-11. Do not provide investment advice,
-    trade recommendations, or definitive
-    stock-price predictions.
-"""
 
 
 def execute_copilot(
@@ -94,8 +50,6 @@ def execute_copilot(
 
     retrieval_ms = (perf_counter() - retrieval_started) * 1000
 
-    context = build_context(results)
-
     # ==================================
     # 2. Claude に渡すメッセージ
     # ==================================
@@ -103,7 +57,7 @@ def execute_copilot(
     messages: list[MessageParam] = [
         {
             "role": "user",
-            "content": (f"QUESTION:\n{question}\n\nCONTEXT:\n{context}"),
+            "content": build_user_message(question, results),
         }
     ]
 
