@@ -15,10 +15,7 @@ logger = logging.getLogger(__name__)
 
 def json_line(payload: dict[str, object]) -> str:
     """
-    Python dictを1行JSONへ変換する。
-
-    NDJSON:
-    1 line = 1 JSON
+    dict を 1 行の JSON 文字列（末尾に改行付き）にする。
     """
 
     return (
@@ -36,20 +33,20 @@ def stream_research_query(
     request_id: str,
 ) -> Iterator[str]:
     """
-    Research QueryをNDJSONでStreamingする。
+    検索結果を先に返し、続けて Claude の回答を少しずつ返す。
 
     Event:
-        metadata → Retrieval情報
-        text_delta → Claudeの回答破片
-        done → 完了情報
-        error → Streaming途中のError
+        metadata → 検索結果
+        text_delta → Claude の回答の断片
+        done → 完了
+        error → ストリーミング中のエラー
     """
 
     started_at = perf_counter()
 
     try:
         # ====================================
-        # Retrieval
+        # 検索
         # ====================================
 
         retrieval_started = perf_counter()
@@ -63,7 +60,7 @@ def stream_research_query(
 
         context = build_context(results)
 
-        # 先にRetrieval結果を返す。
+        # Claude の回答より先に、検索結果を返しておく。
         retrieved_sources = [
             ResearchSource.from_chunk(chunk, score).model_dump()
             for chunk, score in results
@@ -79,7 +76,7 @@ def stream_research_query(
         )
 
         # ====================================
-        # Claude Streaming
+        # Claude の回答をストリーミング
         # ====================================
 
         model = get_model()
@@ -108,7 +105,7 @@ def stream_research_query(
                 }
             ],
         ) as stream:
-            # Claudeからtextが届くたびにSwiftUIへそのまま流す。
+            # Claude から文字列が届くたびに、そのまま iOS へ流す。
             for text in stream.text_stream:
                 yield json_line(
                     {
@@ -117,12 +114,11 @@ def stream_research_query(
                     }
                 )
 
-            # Stream全体が終了した後の完成Messageを取得する。
+            # トークン数を記録するため、完了後にメッセージ全体を取得する。
             final_message = stream.get_final_message()
 
         latency_ms = (perf_counter() - started_at) * 1000
 
-        # Anthropic APIのToken Usage。
         usage = final_message.usage
 
         logger.info(

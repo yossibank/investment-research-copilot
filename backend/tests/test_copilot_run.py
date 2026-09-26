@@ -29,7 +29,7 @@ RESULTS = [
 
 class FakeMessages:
     """
-    Claude APIの代わり。決めておいた応答を順番に返す。
+    Claude API の代わり。決めておいた応答を順番に返す。
     """
 
     def __init__(self, responses: list) -> None:
@@ -101,7 +101,7 @@ def setup_fakes(monkeypatch, responses: list) -> FakeMessages:
 
 def test_validate_sources_drops_unknown_ids() -> None:
     """
-    検索結果にないIDと重複IDはsourcesに入らない。
+    検索結果にない ID と重複 ID は sources に入らない。
     """
 
     answer = CopilotAnswer(

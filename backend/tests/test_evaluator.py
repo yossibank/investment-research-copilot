@@ -1,6 +1,6 @@
-# ============================================================
-# Copilot の実行結果を採点する（APIは呼ばない）
-# ============================================================
+"""
+Copilot の実行結果の採点と集計のテスト。Claude API は呼ばない。
+"""
 
 from research_copilot.agent.models import CopilotAnswer, CopilotRun, ResearchSource
 from research_copilot.evaluation.evaluator import percentile, score_case, summarize
@@ -137,6 +137,6 @@ def test_summarize_counts_source_attribution_only_for_answered() -> None:
 
     summary = summarize(results)
 
-    assert summary["source_attribution_rate"] == 0.0  # 答えた1件に出典がない
+    assert summary["source_attribution_rate"] == 0.0  # 答えた 1 件に出典がない
     assert summary["answer_accuracy"] == 0.5
     assert summary["latency_ms_p50"] == 1000.0

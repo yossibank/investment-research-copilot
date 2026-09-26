@@ -83,7 +83,7 @@ def execute_copilot(
     model = get_model()
 
     # ==================================
-    # 1. Retrieval
+    # 1. 検索
     # ==================================
 
     started = perf_counter()
@@ -97,7 +97,7 @@ def execute_copilot(
     context = build_context(results)
 
     # ==================================
-    # 2. Conversation
+    # 2. Claude に渡すメッセージ
     # ==================================
 
     messages: list[MessageParam] = [
@@ -115,7 +115,7 @@ def execute_copilot(
     output_tokens = 0
 
     # ==================================
-    # 3. Tool Loop
+    # 3. ツール呼び出しのループ
     # ==================================
 
     for _ in range(max_tool_rounds + 1):
@@ -139,7 +139,7 @@ def execute_copilot(
             output_tokens += usage.output_tokens
 
         # ==============================
-        # Tool Request
+        # Claude がツールを要求した場合
         # ==============================
 
         if response.stop_reason == "tool_use":
@@ -222,7 +222,7 @@ def execute_copilot(
             continue
 
         # ==============================
-        # Final Structured Answer
+        # 最終回答（構造化出力）
         # ==============================
 
         answer = response.parsed_output
@@ -249,8 +249,9 @@ def validate_sources(
     results: list[tuple[Chunk, float]],
 ) -> list[ResearchSource]:
     """
-    Claudeのsource_chunk_idsを本物のRetrieval Resultと照合する。
-    Claudeが存在しないIDを返してもAPI Responseには採用しない。
+    Claude が挙げた出典の ID を、実際の検索結果と照合する。
+
+    検索結果にない ID（Claude が作り出した ID）と重複は捨てる。
     """
 
     retrieved_by_id = {

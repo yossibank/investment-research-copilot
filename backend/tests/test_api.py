@@ -8,7 +8,7 @@ client = TestClient(app)
 
 def test_health() -> None:
     """
-    Health Checkが成功することを確認する。
+    Health Check が成功することを確認する。
     """
 
     response = client.get("/health")
@@ -68,7 +68,7 @@ def test_copilot_endpoint(monkeypatch) -> None:
 
 def test_empty_question() -> None:
     """
-    空白だけの質問がValidation Errorになることを確認する。
+    空白だけの質問が Validation Error になることを確認する。
     """
 
     response = client.post(

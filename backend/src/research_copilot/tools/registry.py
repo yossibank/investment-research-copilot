@@ -50,10 +50,10 @@ def execute_tool(
     tool_input: dict,
 ) -> str:
     """
-    Claudeが要求したToolを実行するDispatcher。
+    Claude が要求したツールを実行し、結果を JSON 文字列で返す。
 
-    Tool名をClaudeから直接execするのではなく、
-    allowlistで明示的に許可したToolだけを実行する。
+    ツール名を許可リストと照合し、許可したツールだけを実行する。
+    入力も Pydantic で検証してから渡す。
     """
 
     if name != "calculate_financial_metrics":

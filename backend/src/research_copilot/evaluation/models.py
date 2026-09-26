@@ -2,6 +2,10 @@ from pydantic import BaseModel, Field
 
 
 class GoldenCase(BaseModel):
+    """
+    評価データの 1 問。golden_mvp.jsonl の 1 行に対応する。
+    """
+
     id: str
     question: str
     expected_answer: str
@@ -14,6 +18,10 @@ class GoldenCase(BaseModel):
 
 
 class EvalResult(BaseModel):
+    """
+    1 問を採点した結果。指標ごとに正解かどうかを持つ。
+    """
+
     id: str
     question: str
     category: str

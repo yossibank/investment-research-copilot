@@ -8,7 +8,7 @@ from ..retrieval.models import Chunk
 
 class ResearchSource(BaseModel):
     """
-    検索結果と照合済みの出典。APIとiOSにもこの形で返す。
+    検索結果と照合済みの出典。API と iOS にもこの形で返す。
     """
 
     chunk_id: str
@@ -36,7 +36,7 @@ class ResearchSource(BaseModel):
 
 class CopilotAnswer(BaseModel):
     """
-    Claudeに返させる構造化出力。
+    Claude に返させる構造化出力。
     """
 
     answer: str
@@ -47,9 +47,9 @@ class CopilotAnswer(BaseModel):
 @dataclass
 class CopilotRun:
     """
-    Copilotを一回実行した結果(評価用の詳しい形)。
+    Copilot を一回実行した結果（評価用の詳しい形）。
 
-    APIはこの中からanswer/sources/tools_usedだけを返し、
+    API はこの中から answer/sources/tools_used だけを返し、
     評価は検索結果・レイテンシ・トークン数までを使う。
     """
 

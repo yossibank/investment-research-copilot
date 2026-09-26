@@ -5,10 +5,10 @@ from datetime import UTC, datetime
 
 class JsonFormatter(logging.Formatter):
     """
-    PythonのLogRecordを1行JSONへ変換するFormatter。
+    ログを 1 行 1 JSON で出力する。
 
-    Cloud Logging等へ移行した場合も、
-    JSON Logなら機械的に検索・集計しやすい。
+    JSON にしておけば、後から検索や集計（p50 / p95 など）がしやすい。
+    extra で渡した値のうち、fields に書いた項目だけを出力する。
     """
 
     def format(self, record: logging.LogRecord) -> str:
@@ -55,7 +55,7 @@ class JsonFormatter(logging.Formatter):
 
 def configure_logging() -> None:
     """
-    Application全体のLogging設定。
+    アプリ全体のログを JsonFormatter で出力するよう設定する。
     """
 
     handler = logging.StreamHandler()

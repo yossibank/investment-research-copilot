@@ -5,13 +5,13 @@ from dotenv import load_dotenv
 
 from .paths import ENV_PATH
 
-# モジュールを最初にimportしたときに1回だけ実行される。
+# モジュールを最初に import したときに 1 回だけ実行される。
 load_dotenv(ENV_PATH)
 
 
 def create_client() -> Anthropic:
     """
-    Claude API Clientを生成する。
+    Claude API のクライアントを作る。API キーがなければエラーにする。
     """
 
     api_key = os.getenv("ANTHROPIC_API_KEY")
@@ -28,7 +28,7 @@ def create_client() -> Anthropic:
 
 def get_model() -> str:
     """
-    使用するClaudeのモデル名を環境変数から取得する。
+    使用する Claude のモデル名を環境変数から取得する。
 
     呼ばれるたびに読むので、実行中に環境変数を変えても反映される。
     """

@@ -4,10 +4,12 @@ from ..agent.models import ResearchSource
 
 
 class ResearchQueryRequest(BaseModel):
+    """
+    iOS から受け取る質問。
+    """
+
     question: str = Field(min_length=1, max_length=1000)
 
-    # ge = greater than or equal
-    # le = less than or equal
     top_k: int = Field(default=5, ge=1, le=10)
 
     @field_validator("question")
@@ -17,10 +19,9 @@ class ResearchQueryRequest(BaseModel):
         value: str,
     ) -> str:
         """
-        " "のような空白だけの質問を防ぐ。
+        空白だけの質問を弾き、前後の空白を取り除いた質問を返す。
 
-        min_length=1だけでは空白1文字も有効になるため、
-        strip()後にもチェックする。
+        min_length=1 だけでは空白 1 文字も通ってしまうため。
         """
 
         value = value.strip()
@@ -32,6 +33,10 @@ class ResearchQueryRequest(BaseModel):
 
 
 class CopilotQueryResponse(BaseModel):
+    """
+    iOS に返す回答。ResearchModels.swift の CopilotQueryResponse と対応する。
+    """
+
     answer: str
     is_answerable: bool
     sources: list[ResearchSource] = Field(default_factory=list)

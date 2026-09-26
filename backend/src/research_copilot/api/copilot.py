@@ -5,7 +5,7 @@ from .schemas import CopilotQueryResponse
 
 def to_api_response(run: CopilotRun) -> CopilotQueryResponse:
     """
-    評価用のCopilotRunを、APIで返す形へ変換する。
+    評価用の CopilotRun を、API で返す形へ変換する。
     """
 
     return CopilotQueryResponse(
@@ -23,7 +23,7 @@ def run_copilot_query(
     max_tool_rounds: int = 3,
 ) -> CopilotQueryResponse:
     """
-    API用の入口。実行はexecute_copilotに任せ、API用の形へ変換するだけ。
+    API 用の入口。実行は execute_copilot に任せ、API 用の形へ変換するだけ。
     """
 
     run = execute_copilot(

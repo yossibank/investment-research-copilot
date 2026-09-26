@@ -5,7 +5,9 @@ from ..retrieval.chunking import load_chunks
 
 def main() -> None:
     """
-    Golden Setの evidence_id を決めるための補助ツール。
+    資料の中から文字列を含むチャンクを探す。評価データの evidence_id を決めるときに使う。
+
+    実行: python -m research_copilot.evaluation.find_chunk 2,018,914
     """
 
     parser = argparse.ArgumentParser()

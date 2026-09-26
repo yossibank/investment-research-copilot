@@ -6,9 +6,9 @@ def growth_rate(
     current: float,
 ) -> float | None:
     """
-    成長率を計算する。
+    成長率（%）を計算する。前期が 0 なら計算できないので None を返す。
 
-    Formula:
+    計算式:
 
     (current - previous)
     -------------------- × 100
@@ -26,9 +26,9 @@ def operating_margin(
     operating_income: float,
 ) -> float | None:
     """
-    営業利益率を計算する。
+    営業利益率（%）を計算する。売上高が 0 なら計算できないので None を返す。
 
-    Formula:
+    計算式:
 
     operating_income
     ---------------- × 100
@@ -45,10 +45,10 @@ def calculate_financial_metrics(
     tool_input: FinancialMetricsInput,
 ) -> FinancialMetricsResult:
     """
-    Claudeから渡された数値を使って財務指標を決定論的に計算する。
+    Claude から渡された数値で、成長率と営業利益率を計算する。
 
-    重要:
-        計算自体はLLMにさせない。
+    LLM は計算を間違えることがあるため、計算は Python で行う。
+    入力がそろわない指標は None のままにする。
     """
 
     revenue_growth = None

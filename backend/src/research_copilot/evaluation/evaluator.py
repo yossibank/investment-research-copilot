@@ -27,10 +27,10 @@ def normalize_text(text: str) -> str:
     例:
         売上高 1,100 億円
             ↓
-        売上高1100億円
+        売上高 1100 億円
     """
 
-    # NFKCで全角・半角などをある程度統一する。
+    # NFKC で全角・半角などをある程度統一する。
     text = unicodedata.normalize("NFKC", text)
 
     return text.lower().replace(" ", "").replace("\n", "").replace(",", "")
@@ -41,7 +41,7 @@ def contains_required_terms(
     required_terms: list[str],
 ) -> bool:
     """
-    Claudeの回答に、Golden Setで指定した情報が全て含まれているか確認する。
+    Claude の回答に、Golden Set で指定した情報が全て含まれているか確認する。
     """
 
     normalized_answer = normalize_text(answer)
@@ -51,7 +51,7 @@ def contains_required_terms(
 
 def load_golden_cases(path: Path = DEFAULT_DATASET) -> list[GoldenCase]:
     """
-    JSONLを1行ずつGoldenCaseへ変換する。
+    JSONL を 1 行ずつ GoldenCase へ変換する。
     """
 
     cases: list[GoldenCase] = []
@@ -69,15 +69,15 @@ def load_golden_cases(path: Path = DEFAULT_DATASET) -> list[GoldenCase]:
 
 
 # ============================================================
-# 1問の採点（APIを呼ばないのでテストできる）
+# 1 問の採点（API を呼ばないのでテストできる）
 # ============================================================
 
 
 def score_case(case: GoldenCase, run: CopilotRun) -> EvalResult:
     """
-    Copilotの実行結果(CopilotRun)をGoldenCaseと照合して採点する。
+    Copilot の実行結果（CopilotRun）を GoldenCase と照合して採点する。
 
-    出典は「Claudeが返したID」ではなく、
+    出典は「Claude が返した ID」ではなく、
     検索結果と照合した後の run.sources で採点する。
     """
 
@@ -102,7 +102,7 @@ def score_case(case: GoldenCase, run: CopilotRun) -> EvalResult:
         source_hit = case.evidence_id in source_ids
 
     else:
-        # 回答不能ケースは正解Chunkがないので検索の評価対象外。
+        # 回答不能ケースは正解 Chunk がないので検索の評価対象外。
         retrieval_hit = None
         page_hit = None
 
@@ -113,7 +113,7 @@ def score_case(case: GoldenCase, run: CopilotRun) -> EvalResult:
 
     # ツール選択:
     #   expected_tool あり → そのツールを使った
-    #   expected_tool なし → ツールを1つも使っていない
+    #   expected_tool なし → ツールを 1 つも使っていない
     if case.expected_tool is None:
         tool_correct = len(run.tools_used) == 0
     else:
@@ -145,7 +145,7 @@ def score_case(case: GoldenCase, run: CopilotRun) -> EvalResult:
 
 def failed_result(case: GoldenCase, error: Exception) -> EvalResult:
     """
-    APIエラーなどで実行できなかったケース。全指標を失敗として数える。
+    API エラーなどで実行できなかったケース。全指標を失敗として数える。
     """
 
     return EvalResult(
@@ -167,13 +167,13 @@ def failed_result(case: GoldenCase, error: Exception) -> EvalResult:
 
 
 # ============================================================
-# 集計（APIを呼ばないのでテストできる）
+# 集計（API を呼ばないのでテストできる）
 # ============================================================
 
 
 def percentile(values: list[float], p: float) -> float | None:
     """
-    nearest-rank法のパーセンタイル。p50 / p95 に使う。
+    nearest-rank 法のパーセンタイル。p50 / p95 に使う。
     """
 
     if not values:
@@ -186,6 +186,10 @@ def percentile(values: list[float], p: float) -> float | None:
 
 
 def rate(flags: list[bool]) -> float | None:
+    """
+    True の割合を返す。対象が 0 件なら None（0% と区別するため）。
+    """
+
     if not flags:
         return None
 
@@ -193,6 +197,10 @@ def rate(flags: list[bool]) -> float | None:
 
 
 def summarize(results: list[EvalResult]) -> dict:
+    """
+    全問の採点結果から、指標ごとの正解率・レイテンシ・トークン数を集計する。
+    """
+
     retrieval_results = [r for r in results if r.retrieval_hit is not None]
     answered = [r for r in results if r.actual_answerable]
     latencies = [r.latency_ms for r in results if r.latency_ms is not None]
@@ -216,7 +224,7 @@ def summarize(results: list[EvalResult]) -> dict:
         "page_recall_at_5": rate([bool(r.page_hit) for r in retrieval_results]),
         "answer_accuracy": rate([r.answer_correct for r in results]),
         "source_match_rate": rate([r.source_hit for r in results]),
-        # 「答えた」ケースのうち、検証後の出典が1つ以上付いた割合
+        # 「答えた」ケースのうち、検証後の出典が 1 つ以上付いた割合
         "source_attribution_rate": rate(
             [len(r.source_chunk_ids) > 0 for r in answered]
         ),
@@ -242,6 +250,10 @@ def summarize(results: list[EvalResult]) -> dict:
 
 
 def git_commit() -> str:
+    """
+    評価したコードの commit を返す。未 commit の変更があれば末尾に -dirty を付ける。
+    """
+
     try:
         commit = subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"],
@@ -266,6 +278,10 @@ def git_commit() -> str:
 
 
 def display_path(path: Path) -> str:
+    """
+    結果ファイルに記録するため、リポジトリのルートからの相対パスにする。
+    """
+
     try:
         return path.relative_to(REPO_ROOT).as_posix()
     except ValueError:
@@ -274,7 +290,7 @@ def display_path(path: Path) -> str:
 
 def warmup() -> float:
     """
-    埋め込みモデルの読み込みを先に済ませる（Claude APIは呼ばない）。
+    埋め込みモデルの読み込みを先に済ませる（Claude API は呼ばない）。
     初回だけ遅い時間をレイテンシの集計に混ぜないため。
     """
 
@@ -290,6 +306,10 @@ def evaluate(
     top_k: int = 5,
     save_as: str | None = None,
 ) -> dict:
+    """
+    評価データの全問で Copilot を実行して採点し、結果を evaluation/results/ に保存する。
+    """
+
     cases = load_golden_cases(dataset)
 
     if limit is not None:
@@ -313,7 +333,7 @@ def evaluate(
             run = execute_copilot(case.question, top_k=top_k)
             results.append(score_case(case, run))
 
-        except Exception as error:  # 1問の失敗で全体を止めない
+        except Exception as error:  # 1 問の失敗で全体を止めない
             print(f"  ! failed: {error}")
             results.append(failed_result(case, error))
 

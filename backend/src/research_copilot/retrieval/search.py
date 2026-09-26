@@ -9,12 +9,12 @@ from .embeddings import MODEL_NAME
 from .models import Chunk
 
 
-# 関数の結果を覚える装飾
 @lru_cache(maxsize=1)
 def get_model() -> SentenceTransformer:
     """
-    Embedding Modelを最初の一回だけ生成する。
-    2回目以降は同じinstanceを再利用する。
+    埋め込みモデルを初回だけ読み込み、2 回目以降は同じものを使い回す。
+
+    読み込みに数秒かかるため（評価の warmup で約 8 秒）、質問のたびには読み込まない。
     """
 
     return SentenceTransformer(MODEL_NAME)
@@ -25,69 +25,33 @@ def search(
     top_k: int = 5,
 ) -> list[tuple[Chunk, float]]:
     """
-    質問をEmbedding化し、全Chunkとの意味的類似度を計算して、上位top_k件を返す。
-
-    戻り値:
-
-    [
-        (Chunk, score),
-        (Chunk, score),
-        ...
-    ]
+    質問と意味が近いチャンクを、類似度が高い順に top_k 件返す。
     """
 
-    # 空の質問を禁止する。
     if not query.strip():
         raise ValueError("Query must not be empty.")
 
-    # Chunkを読み込む。
     chunks = load_chunks()
 
-    # あらかじめ計算して保存しておいた全Chunkのベクトルをロードする。
     embeddings = np.load(EMBEDDINGS_PATH)
 
-    # Chunk数とEmbedding数が一致を前提とする。
+    # chunks.json と embeddings.npy は同じ順番で保存されている前提。
+    # 件数がずれていたら、chunking を作り直した後に embeddings を作り直していない。
     if len(chunks) != len(embeddings):
         raise RuntimeError("Chunk count and embedding count do not match.")
 
     model = get_model()
 
     query_embedding = model.encode(
-        # E5系モデルでは
-        # 検索質問には
-        #
-        # query:
-        #
-        # を付ける。
+        # 検索する側の文には "query: " を付ける（E5 系モデルの前提。embeddings.py を参照）。
         [f"query: {query}"],
-        # 正規化する。
         normalize_embeddings=True,
-        # リストとして1件のみ渡すので[0]で1件目を取り出す。
     )[0]
 
-    # embedding → 「文章を数字の並びにしたもの」384個の数字に変換される。
-    #
-    # これらを比較して「数字の並びの似方」を使って計測する。
-    #
-    # @ は行列積
-    #
-    # 質問 [0.9, 0.2, 0.1]
-    # Chunk A [0.8, 0.2, 0.1]
-    #
-    # 0.9 * 0.8 + 0.2 * 0.2 + 0.1 * 0.1 → 類似度スコアを算出。
+    # どちらも正規化済みなので、内積がそのままコサイン類似度になる。
+    # 形は (チャンク数, 384) @ (384,) → (チャンク数,)。
     scores = embeddings @ query_embedding
 
-    # argsort
-    #
-    # → 「小さい順にならべたときのindex」を返す。
-    #
-    # [::-1]
-    #
-    # → sliceで逆順にする。
-    #
-    # [:top_k]
-    #
-    # sliceでtop_k件を取得する。
     top_indices = np.argsort(scores)[::-1][:top_k]
 
     results: list[tuple[Chunk, float]] = []
@@ -104,24 +68,17 @@ def search(
 
 
 def main() -> None:
-    # ======================================================
-    # ユーザーから質問を入力
-    # ======================================================
+    """
+    ターミナルで質問を入力し、検索結果の上位 5 件を表示する。Claude は呼ばない。
+
+    実行: python -m research_copilot.retrieval.search
+    """
 
     query = input("質問を入力してください: ")
 
-    # ======================================================
-    # Vector Search
-    # ======================================================
-
-    # Top-5を検索。
     results = search(query, top_k=5)
 
     print("\n===Search Results ===")
-
-    # ======================================================
-    # 検索結果を順位付きで表示
-    # ======================================================
 
     for rank, (chunk, score) in enumerate(results, start=1):
         print(f"\n--- Rank {rank} ---")

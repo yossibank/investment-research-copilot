@@ -27,18 +27,13 @@ async def request_logging(
     call_next,
 ):
     """
-    全HTTP Requestへ共通処理を追加する。
-
-    - Request ID生成
-    - Request開始Log
-    - HTTP処理時間計測
-    - Response HeaderへRequest ID追加
+    すべてのリクエストにリクエスト ID を付け、開始・完了・失敗と処理時間をログに残す。
     """
 
-    # ClientからRequest IDが来ていれば利用、なければBackend側で生成。
+    # クライアントからリクエスト ID が来ていればそれを使い、なければここで作る。
     request_id = request.headers.get("X-Request-ID") or str(uuid4())
 
-    # 他の処理から参照できるようにRequest stateへ保存する。
+    # エンドポイント側から参照できるように、request.state に保存する。
     request.state.request_id = request_id
 
     started_at = perf_counter()
@@ -74,7 +69,7 @@ async def request_logging(
 
     latency_ms = (perf_counter() - started_at) * 1000
 
-    # Swift側でもRequest IDを確認できるようにする。
+    # iOS 側でもリクエスト ID を確認できるように、レスポンスヘッダーに付ける。
     response.headers["X-Request-ID"] = request_id
 
     logger.info(
@@ -95,11 +90,7 @@ async def request_logging(
 @app.get("/health")
 def health() -> dict[str, str]:
     """
-    Server自体が起動しているか確認するEndpoint。
-
-    Claude APIは呼ばない。
-
-    MonitoringやDebugでも使いやすい。
+    サーバーが起動しているかだけを返す。Claude は呼ばない。
     """
 
     return {"status": "ok"}
@@ -114,7 +105,7 @@ def research_stream(
     request: Request,
 ) -> StreamingResponse:
     """
-    Claudeの回答をNDJSONでStreamingする。
+    Claude の回答を NDJSON（1 行 1 JSON）で少しずつ返す。ツールは使わない。
     """
 
     request_id = request.state.request_id
@@ -138,11 +129,7 @@ def research_copilot(
     request: Request,
 ) -> CopilotQueryResponse:
     """
-    RAG
-      +
-    Tool Calling
-      +
-    Source Attribution
+    検索・ツール実行・出典の検証までを行った回答を返す。iOS アプリが使うエンドポイント。
     """
 
     request_id = request.state.request_id
