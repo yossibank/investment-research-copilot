@@ -3,14 +3,10 @@ from ..retrieval.models import Chunk
 
 def build_context(results: list[tuple[Chunk, float]]) -> str:
     """
-    Vector Searchの結果をClaudeへ渡すContext文字列へ変換する。
-    下記の形式で結果を返す。
+    検索結果を、Claude に渡す CONTEXT 文字列に変換する。
 
-    [
-        (Chunk, score),
-        (Chunk, score),
-        ...
-    ]
+    各チャンクに CHUNK_ID を付けて渡し、回答の根拠として
+    その ID を返させる（validate_sources で実際の検索結果と照合する）。
     """
 
     sections: list[str] = []

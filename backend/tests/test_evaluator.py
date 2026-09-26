@@ -1,5 +1,5 @@
 # ============================================================
-# B9: Copilot の実行結果を採点する（APIは呼ばない）
+# Copilot の実行結果を採点する（APIは呼ばない）
 # ============================================================
 
 from research_copilot.agent.models import CopilotAnswer, CopilotRun, ResearchSource

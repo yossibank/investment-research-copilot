@@ -36,7 +36,7 @@ class ResearchSource(BaseModel):
 
 class CopilotAnswer(BaseModel):
     """
-    Claudeに変えさせる構造化出力。
+    Claudeに返させる構造化出力。
     """
 
     answer: str

@@ -64,28 +64,17 @@ def execute_copilot(
     max_tool_rounds: int = 3,
 ) -> CopilotRun:
     """
-    Research CopilotのMain Orchestrator。
+    質問に対して、検索 → Claude（必要ならツール実行）→ 出典の検証までを行う。
 
-    Flow:
-        Question
-            ↓
-        Vector Search
-            ↓
-        Context
-            ↓
-        Claude
-            ↓
-        Tool Use?
-            ↓
-        Python Tool
-            ↓
-        Claude
-            ↓
-        Structured Answer
-            ↓
-        Source Validation
-            ↓
-        API Response
+    流れ:
+        1. 質問に近いチャンクを検索する
+        2. 検索結果を CONTEXT として Claude に渡す
+        3. Claude が tool_use を返したら Python でツールを実行し、結果を渡してもう一度呼ぶ
+        4. Claude の構造化された回答（CopilotAnswer）を受け取る
+        5. 回答が挙げた出典を、実際の検索結果と照合する
+
+    API と評価の両方から呼ばれるため、HTTP のことは扱わない。
+    戻り値の CopilotRun には、評価で使うレイテンシやトークン数も含まれる。
     """
 
     if not question.strip():
@@ -239,7 +228,7 @@ def execute_copilot(
         answer = response.parsed_output
 
         if answer is None:
-            raise RuntimeError("Claude returned no parse CopilotAnswer.")
+            raise RuntimeError("Claude returned no parsed CopilotAnswer.")
 
         return CopilotRun(
             answer=answer,
