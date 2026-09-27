@@ -3,9 +3,12 @@ Claude に渡すツールの定義と、要求されたツールを実行する�
 """
 
 import json
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any
 
 from anthropic.types import ToolParam
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from .financial_tool import calculate_financial_metrics
 from .models import FinancialMetricsInput
@@ -44,9 +47,29 @@ TOOLS: list[ToolParam] = [
                     "description": "Operating income for the current period.",
                 },
             },
+            "additionalProperties": False,
         },
     }
 ]
+
+
+@dataclass(frozen=True)
+class ToolHandler:
+    """
+    許可したツール 1 つ分の入力の型と実行する関数の組。
+    """
+
+    input_model: type[BaseModel]
+    run: Callable[[Any], BaseModel]
+
+
+# 許可リスト。ここにはないツール名は、Claude が要求しても実行しない。
+TOOL_HANDLERS: dict[str, ToolHandler] = {
+    "calculate_financial_metrics": ToolHandler(
+        input_model=FinancialMetricsInput,
+        run=calculate_financial_metrics,
+    )
+}
 
 
 def execute_tool(
@@ -60,16 +83,18 @@ def execute_tool(
     入力も Pydantic で検証してから渡す。
     """
 
-    if name != "calculate_financial_metrics":
+    handler = TOOL_HANDLERS.get(name)
+
+    if handler is None:
         raise ValueError(f"Unknown tool: {name}")
 
     try:
         validated_input = FinancialMetricsInput.model_validate(tool_input)
 
     except ValidationError as error:
-        raise ValueError("Invalid financial tool input.") from error
+        raise ValueError(f"Invalid input for tool: {name}") from error
 
-    result = calculate_financial_metrics(validated_input)
+    result = handler.run(validated_input)
 
     return json.dumps(
         result.model_dump(),

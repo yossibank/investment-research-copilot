@@ -1,34 +1,50 @@
 {
   "metadata": {
-    "created_at": "2026-09-26T14:51:02+09:00",
-    "git_commit": "46f5e44",
+    "created_at": "2026-09-27T15:51:50+09:00",
+    "git_commit": "61d021e-dirty",
     "model": "claude-sonnet-5",
     "embedding_model": "intfloat/multilingual-e5-small",
     "top_k": 5,
     "dataset": "evaluation/datasets/golden_mvp.jsonl",
-    "limit": 3,
-    "warmup_ms": 8271.5
+    "limit": null,
+    "warmup_ms": 8409.7
   },
   "summary": {
-    "total": 3,
+    "total": 30,
     "errors": 0,
-    "retrieval_cases": 3,
-    "recall_at_5": 1.0,
+    "retrieval_cases": 25,
+    "recall_at_5": 0.92,
     "page_recall_at_5": 1.0,
-    "answer_accuracy": 1.0,
-    "source_match_rate": 1.0,
+    "answer_accuracy": 0.9333333333333333,
+    "source_match_rate": 0.9,
     "source_attribution_rate": 1.0,
-    "tool_selection_accuracy": 1.0,
-    "latency_ms_p50": 3312.6,
-    "latency_ms_p95": 3437.1,
-    "input_tokens_total": 13155,
-    "output_tokens_total": 441,
+    "tool_selection_accuracy": 0.8666666666666667,
+    "latency_ms_p50": 3489.9,
+    "latency_ms_p95": 6471.3,
+    "input_tokens_total": 169440,
+    "output_tokens_total": 6590,
     "cost_usd": null,
     "cost_note": "未測定（トークン数のみ記録）",
     "by_category": {
-      "numeric": {
+      "calculation": {
         "total": 3,
         "answer_accuracy": 1.0
+      },
+      "forecast_vs_actual": {
+        "total": 1,
+        "answer_accuracy": 1.0
+      },
+      "numeric": {
+        "total": 20,
+        "answer_accuracy": 0.95
+      },
+      "reason": {
+        "total": 2,
+        "answer_accuracy": 1.0
+      },
+      "unanswerable": {
+        "total": 4,
+        "answer_accuracy": 0.75
       }
     }
   },
@@ -44,7 +60,7 @@
       "answer_correct": true,
       "source_hit": true,
       "tool_correct": true,
-      "answer": "2027年3月期第1四半期(2026年4月1日〜2026年6月30日)の売上高は2,018,914百万円で、前年同期比6.4%増となりました。",
+      "answer": "パナソニック ホールディングス株式会社の2027年3月期第1四半期（2026年4月1日～2026年6月30日）の売上高は2,018,914百万円でした。これは前年同期（2026年3月期第1四半期：1,896,691百万円）比6.4％増加しています。",
       "expected_tool": null,
       "tools_used": [],
       "retrieved_chunk_ids": [
@@ -59,10 +75,10 @@
         "パナソニック ホールディングス株式会社-p7-c0"
       ],
       "expected_evidence_id": "パナソニック ホールディングス株式会社-p7-c0",
-      "latency_ms": 3437.1,
-      "retrieval_ms": 14.4,
-      "input_tokens": 4384,
-      "output_tokens": 132,
+      "latency_ms": 6034.6,
+      "retrieval_ms": 11.6,
+      "input_tokens": 4394,
+      "output_tokens": 172,
       "error": null
     },
     {
@@ -76,7 +92,7 @@
       "answer_correct": true,
       "source_hit": true,
       "tool_correct": true,
-      "answer": "2027年3月期第1四半期（2026年4月1日～2026年6月30日）の営業利益は182,455百万円でした。前年同期（2026年3月期第1四半期、86,903百万円）比で110.0%増となっています。",
+      "answer": "2027年3月期第1四半期(2026年4月1日〜2026年6月30日)の営業利益は182,455百万円でした。前年同期(2026年3月期第1四半期)の86,903百万円に対し、110.0%の増加となっています。",
       "expected_tool": null,
       "tools_used": [],
       "retrieved_chunk_ids": [
@@ -91,10 +107,10 @@
         "パナソニック ホールディングス株式会社-p7-c0"
       ],
       "expected_evidence_id": "パナソニック ホールディングス株式会社-p7-c0",
-      "latency_ms": 2790.5,
-      "retrieval_ms": 49.1,
-      "input_tokens": 4385,
-      "output_tokens": 152,
+      "latency_ms": 3178.0,
+      "retrieval_ms": 40.7,
+      "input_tokens": 4395,
+      "output_tokens": 157,
       "error": null
     },
     {
@@ -108,7 +124,7 @@
       "answer_correct": true,
       "source_hit": true,
       "tool_correct": true,
-      "answer": "2027年3月期第1四半期(2026年4月1日～2026年6月30日)の税引前利益は188,947百万円でした。前年同期(2026年3月期第1四半期)の90,977百万円と比較して107.7%の増加となっています。",
+      "answer": "2027年3月期第1四半期(2026年4月1日～2026年6月30日)の税引前利益は188,947百万円でした。前年同期(2026年3月期第1四半期)の90,977百万円に比べ107.7%の増加となっています。",
       "expected_tool": null,
       "tools_used": [],
       "retrieved_chunk_ids": [
@@ -123,10 +139,858 @@
         "パナソニック ホールディングス株式会社-p7-c0"
       ],
       "expected_evidence_id": "パナソニック ホールディングス株式会社-p7-c0",
-      "latency_ms": 3312.6,
-      "retrieval_ms": 61.1,
-      "input_tokens": 4386,
+      "latency_ms": 3136.5,
+      "retrieval_ms": 61.5,
+      "input_tokens": 4396,
       "output_tokens": 157,
+      "error": null
+    },
+    {
+      "id": "q04",
+      "question": "2027年3月期第1四半期の親会社の所有者に帰属する四半期純利益はいくらですか。",
+      "category": "numeric",
+      "expected_answerable": true,
+      "actual_answerable": true,
+      "retrieval_hit": true,
+      "page_hit": true,
+      "answer_correct": true,
+      "source_hit": true,
+      "tool_correct": true,
+      "answer": "2027年3月期第1四半期（2026年4月1日～2026年6月30日）の親会社の所有者に帰属する四半期純利益は135,173百万円でした。前年同期（2026年3月期第1四半期）は71,463百万円で、前年同期比89.2％の増加となっています。",
+      "expected_tool": null,
+      "tools_used": [],
+      "retrieved_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p1-c1",
+        "パナソニック ホールディングス株式会社-p2-c0",
+        "パナソニック ホールディングス株式会社-p1-c0",
+        "パナソニック ホールディングス株式会社-p7-c0",
+        "パナソニック ホールディングス株式会社-p6-c1"
+      ],
+      "source_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p1-c0",
+        "パナソニック ホールディングス株式会社-p7-c0"
+      ],
+      "expected_evidence_id": "パナソニック ホールディングス株式会社-p7-c0",
+      "latency_ms": 3301.8,
+      "retrieval_ms": 64.9,
+      "input_tokens": 4853,
+      "output_tokens": 173,
+      "error": null
+    },
+    {
+      "id": "q05",
+      "question": "2027年3月期第1四半期の基本的1株当たり四半期純利益はいくらですか。",
+      "category": "numeric",
+      "expected_answerable": true,
+      "actual_answerable": true,
+      "retrieval_hit": true,
+      "page_hit": true,
+      "answer_correct": false,
+      "source_hit": true,
+      "tool_correct": true,
+      "answer": "2027年3月期第1四半期の基本的1株当たり四半期純利益は57円90銭です。",
+      "expected_tool": null,
+      "tools_used": [],
+      "retrieved_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p1-c1",
+        "パナソニック ホールディングス株式会社-p2-c0",
+        "パナソニック ホールディングス株式会社-p8-c0",
+        "パナソニック ホールディングス株式会社-p1-c0",
+        "パナソニック ホールディングス株式会社-p7-c0"
+      ],
+      "source_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p1-c0"
+      ],
+      "expected_evidence_id": "パナソニック ホールディングス株式会社-p1-c0",
+      "latency_ms": 2354.7,
+      "retrieval_ms": 69.5,
+      "input_tokens": 4807,
+      "output_tokens": 87,
+      "error": null
+    },
+    {
+      "id": "q06",
+      "question": "2026年度通期の今回修正後の売上高予想はいくらですか。",
+      "category": "numeric",
+      "expected_answerable": true,
+      "actual_answerable": true,
+      "retrieval_hit": true,
+      "page_hit": true,
+      "answer_correct": true,
+      "source_hit": true,
+      "tool_correct": true,
+      "answer": "2026年度通期の今回修正後の売上高予想は7兆8,000億円です（前回発表予想7兆6,000億円から2,000億円、2.6％の増額修正）。",
+      "expected_tool": null,
+      "tools_used": [],
+      "retrieved_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p2-c0",
+        "パナソニック ホールディングス株式会社-p4-c0",
+        "パナソニック ホールディングス株式会社-p4-c1",
+        "パナソニック ホールディングス株式会社-p8-c0",
+        "パナソニック ホールディングス株式会社-p7-c0"
+      ],
+      "source_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p4-c0"
+      ],
+      "expected_evidence_id": "パナソニック ホールディングス株式会社-p4-c0",
+      "latency_ms": 3481.5,
+      "retrieval_ms": 65.0,
+      "input_tokens": 4359,
+      "output_tokens": 113,
+      "error": null
+    },
+    {
+      "id": "q07",
+      "question": "2026年度通期の今回修正後の営業利益予想はいくらですか。",
+      "category": "numeric",
+      "expected_answerable": true,
+      "actual_answerable": true,
+      "retrieval_hit": true,
+      "page_hit": true,
+      "answer_correct": true,
+      "source_hit": true,
+      "tool_correct": true,
+      "answer": "2026年度通期の今回修正後の営業利益予想は5,900億円です（調整後営業利益は6,500億円）。なお、前回発表予想は5,500億円でした。",
+      "expected_tool": null,
+      "tools_used": [],
+      "retrieved_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p2-c0",
+        "パナソニック ホールディングス株式会社-p8-c0",
+        "パナソニック ホールディングス株式会社-p4-c0",
+        "パナソニック ホールディングス株式会社-p4-c1",
+        "パナソニック ホールディングス株式会社-p10-c0"
+      ],
+      "source_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p4-c0"
+      ],
+      "expected_evidence_id": "パナソニック ホールディングス株式会社-p4-c0",
+      "latency_ms": 3145.4,
+      "retrieval_ms": 63.3,
+      "input_tokens": 4522,
+      "output_tokens": 112,
+      "error": null
+    },
+    {
+      "id": "q08",
+      "question": "2026年度通期の今回修正後の親会社の所有者に帰属する当期純利益予想はいくらですか。",
+      "category": "numeric",
+      "expected_answerable": true,
+      "actual_answerable": true,
+      "retrieval_hit": true,
+      "page_hit": true,
+      "answer_correct": true,
+      "source_hit": true,
+      "tool_correct": true,
+      "answer": "2026年度通期（2026年４月１日～2027年３月31日）の今回修正後の親会社の所有者に帰属する当期純利益予想は4,500億円（4,500,000百万円）です。基本的１株当たり当期純利益は192.73円です。なお、前回発表予想（4,200億円）からの上方修正であり、増減額は+300億円（+7.1％）です。",
+      "expected_tool": null,
+      "tools_used": [],
+      "retrieved_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p1-c1",
+        "パナソニック ホールディングス株式会社-p4-c0",
+        "パナソニック ホールディングス株式会社-p2-c0",
+        "パナソニック ホールディングス株式会社-p8-c0",
+        "パナソニック ホールディングス株式会社-p10-c0"
+      ],
+      "source_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p4-c0",
+        "パナソニック ホールディングス株式会社-p1-c1"
+      ],
+      "expected_evidence_id": "パナソニック ホールディングス株式会社-p4-c0",
+      "latency_ms": 4393.9,
+      "retrieval_ms": 74.9,
+      "input_tokens": 4928,
+      "output_tokens": 203,
+      "error": null
+    },
+    {
+      "id": "q09",
+      "question": "2026年度第1四半期末の資産合計はいくらですか。",
+      "category": "numeric",
+      "expected_answerable": true,
+      "actual_answerable": true,
+      "retrieval_hit": true,
+      "page_hit": true,
+      "answer_correct": true,
+      "source_hit": true,
+      "tool_correct": true,
+      "answer": "パナソニック ホールディングス株式会社の2026年度第1四半期末（2026年6月30日現在）の資産合計は10,427,680百万円です。",
+      "expected_tool": null,
+      "tools_used": [],
+      "retrieved_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p6-c0",
+        "パナソニック ホールディングス株式会社-p2-c0",
+        "パナソニック ホールディングス株式会社-p1-c1",
+        "パナソニック ホールディングス株式会社-p10-c0",
+        "パナソニック ホールディングス株式会社-p7-c0"
+      ],
+      "source_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p6-c0",
+        "パナソニック ホールディングス株式会社-p1-c1"
+      ],
+      "expected_evidence_id": "パナソニック ホールディングス株式会社-p6-c0",
+      "latency_ms": 3171.3,
+      "retrieval_ms": 64.1,
+      "input_tokens": 4776,
+      "output_tokens": 170,
+      "error": null
+    },
+    {
+      "id": "q10",
+      "question": "2026年度第1四半期末の現金及び現金同等物はいくらですか。",
+      "category": "numeric",
+      "expected_answerable": true,
+      "actual_answerable": true,
+      "retrieval_hit": true,
+      "page_hit": true,
+      "answer_correct": true,
+      "source_hit": true,
+      "tool_correct": false,
+      "answer": "2026年度第1四半期末（2026年6月30日現在）の現金及び現金同等物は903,074百万円です。なお、2025年度末（2026年3月31日現在）は770,179百万円でした。",
+      "expected_tool": null,
+      "tools_used": [
+        "calculate_financial_metrics"
+      ],
+      "retrieved_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p6-c0",
+        "パナソニック ホールディングス株式会社-p10-c1",
+        "パナソニック ホールディングス株式会社-p10-c0",
+        "パナソニック ホールディングス株式会社-p2-c0",
+        "パナソニック ホールディングス株式会社-p7-c0"
+      ],
+      "source_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p6-c0",
+        "パナソニック ホールディングス株式会社-p10-c1"
+      ],
+      "expected_evidence_id": "パナソニック ホールディングス株式会社-p6-c0",
+      "latency_ms": 5019.1,
+      "retrieval_ms": 76.6,
+      "input_tokens": 9071,
+      "output_tokens": 174,
+      "error": null
+    },
+    {
+      "id": "q11",
+      "question": "2026年度第1四半期末の棚卸資産はいくらですか。",
+      "category": "numeric",
+      "expected_answerable": true,
+      "actual_answerable": true,
+      "retrieval_hit": true,
+      "page_hit": true,
+      "answer_correct": true,
+      "source_hit": true,
+      "tool_correct": false,
+      "answer": "2026年度第1四半期末（2026年6月30日現在）の棚卸資産は1,179,799百万円です。なお、2025年度末（2026年3月31日現在）の棚卸資産は1,066,123百万円でした。",
+      "expected_tool": null,
+      "tools_used": [
+        "calculate_financial_metrics"
+      ],
+      "retrieved_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p6-c0",
+        "パナソニック ホールディングス株式会社-p2-c0",
+        "パナソニック ホールディングス株式会社-p1-c1",
+        "パナソニック ホールディングス株式会社-p10-c0",
+        "パナソニック ホールディングス株式会社-p7-c0"
+      ],
+      "source_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p6-c0"
+      ],
+      "expected_evidence_id": "パナソニック ホールディングス株式会社-p6-c0",
+      "latency_ms": 5010.7,
+      "retrieval_ms": 50.9,
+      "input_tokens": 9651,
+      "output_tokens": 160,
+      "error": null
+    },
+    {
+      "id": "q12",
+      "question": "2026年度第1四半期末の負債合計はいくらですか。",
+      "category": "numeric",
+      "expected_answerable": true,
+      "actual_answerable": true,
+      "retrieval_hit": false,
+      "page_hit": true,
+      "answer_correct": true,
+      "source_hit": false,
+      "tool_correct": false,
+      "answer": "2026年度第1四半期末（2026年6月30日現在）の負債合計は4,852,951百万円です。内訳は流動負債3,041,025百万円、非流動負債1,811,926百万円です。なお、2025年度末（2026年3月31日現在）の負債合計は4,790,457百万円でした。",
+      "expected_tool": null,
+      "tools_used": [
+        "calculate_financial_metrics"
+      ],
+      "retrieved_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p6-c0",
+        "パナソニック ホールディングス株式会社-p2-c0",
+        "パナソニック ホールディングス株式会社-p10-c0",
+        "パナソニック ホールディングス株式会社-p8-c0",
+        "パナソニック ホールディングス株式会社-p3-c0"
+      ],
+      "source_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p6-c0"
+      ],
+      "expected_evidence_id": "パナソニック ホールディングス株式会社-p6-c1",
+      "latency_ms": 4992.7,
+      "retrieval_ms": 43.7,
+      "input_tokens": 9351,
+      "output_tokens": 190,
+      "error": null
+    },
+    {
+      "id": "q13",
+      "question": "2026年度第1四半期末の資本合計はいくらですか。",
+      "category": "numeric",
+      "expected_answerable": true,
+      "actual_answerable": true,
+      "retrieval_hit": false,
+      "page_hit": true,
+      "answer_correct": true,
+      "source_hit": false,
+      "tool_correct": true,
+      "answer": "2026年度第1四半期末（2026年6月30日現在）の資本合計は5,574,729百万円です。なお、このうち親会社の所有者に帰属する持分は5,405,922百万円です。",
+      "expected_tool": null,
+      "tools_used": [],
+      "retrieved_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p6-c0",
+        "パナソニック ホールディングス株式会社-p2-c0",
+        "パナソニック ホールディングス株式会社-p1-c1",
+        "パナソニック ホールディングス株式会社-p10-c0",
+        "パナソニック ホールディングス株式会社-p3-c0"
+      ],
+      "source_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p1-c1"
+      ],
+      "expected_evidence_id": "パナソニック ホールディングス株式会社-p6-c1",
+      "latency_ms": 3244.8,
+      "retrieval_ms": 187.2,
+      "input_tokens": 4619,
+      "output_tokens": 120,
+      "error": null
+    },
+    {
+      "id": "q14",
+      "question": "2026年度第1四半期の売上総利益はいくらですか。",
+      "category": "numeric",
+      "expected_answerable": true,
+      "actual_answerable": true,
+      "retrieval_hit": true,
+      "page_hit": true,
+      "answer_correct": true,
+      "source_hit": true,
+      "tool_correct": true,
+      "answer": "2026年度第1四半期（2026年4月1日～2026年6月30日）の売上総利益は665,899百万円です。売上高2,018,914百万円から売上原価1,353,015百万円を差し引いた金額で、前年同期（603,751百万円）比110％となっています。",
+      "expected_tool": null,
+      "tools_used": [],
+      "retrieved_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p2-c0",
+        "パナソニック ホールディングス株式会社-p7-c0",
+        "パナソニック ホールディングス株式会社-p6-c0",
+        "パナソニック ホールディングス株式会社-p1-c1",
+        "パナソニック ホールディングス株式会社-p10-c0"
+      ],
+      "source_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p7-c0"
+      ],
+      "expected_evidence_id": "パナソニック ホールディングス株式会社-p7-c0",
+      "latency_ms": 6160.1,
+      "retrieval_ms": 77.0,
+      "input_tokens": 4776,
+      "output_tokens": 385,
+      "error": null
+    },
+    {
+      "id": "q15",
+      "question": "2026年度第1四半期の販売費及び一般管理費はいくらですか。",
+      "category": "numeric",
+      "expected_answerable": true,
+      "actual_answerable": true,
+      "retrieval_hit": true,
+      "page_hit": true,
+      "answer_correct": true,
+      "source_hit": true,
+      "tool_correct": true,
+      "answer": "パナソニック ホールディングスの2026年度第1四半期（2026年4月1日～2026年6月30日）の販売費及び一般管理費は△479,469百万円でした（前年同期は△512,272百万円）。",
+      "expected_tool": null,
+      "tools_used": [],
+      "retrieved_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p2-c0",
+        "パナソニック ホールディングス株式会社-p7-c0",
+        "パナソニック ホールディングス株式会社-p1-c1",
+        "パナソニック ホールディングス株式会社-p6-c0",
+        "パナソニック ホールディングス株式会社-p8-c0"
+      ],
+      "source_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p7-c0"
+      ],
+      "expected_evidence_id": "パナソニック ホールディングス株式会社-p7-c0",
+      "latency_ms": 4385.6,
+      "retrieval_ms": 58.3,
+      "input_tokens": 4639,
+      "output_tokens": 265,
+      "error": null
+    },
+    {
+      "id": "q16",
+      "question": "2026年度第1四半期の営業活動によるキャッシュ・フローの計はいくらですか。",
+      "category": "numeric",
+      "expected_answerable": true,
+      "actual_answerable": true,
+      "retrieval_hit": true,
+      "page_hit": true,
+      "answer_correct": true,
+      "source_hit": true,
+      "tool_correct": true,
+      "answer": "2026年度第1四半期（2026年4月1日～2026年6月30日）の営業活動によるキャッシュ・フローの計は372,036百万円です。",
+      "expected_tool": null,
+      "tools_used": [],
+      "retrieved_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p10-c0",
+        "パナソニック ホールディングス株式会社-p9-c1",
+        "パナソニック ホールディングス株式会社-p9-c0",
+        "パナソニック ホールディングス株式会社-p2-c0",
+        "パナソニック ホールディングス株式会社-p10-c1"
+      ],
+      "source_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p10-c0"
+      ],
+      "expected_evidence_id": "パナソニック ホールディングス株式会社-p10-c0",
+      "latency_ms": 3283.2,
+      "retrieval_ms": 65.4,
+      "input_tokens": 4632,
+      "output_tokens": 163,
+      "error": null
+    },
+    {
+      "id": "q17",
+      "question": "2026年度第1四半期の投資活動によるキャッシュ・フローの計はいくらですか。",
+      "category": "numeric",
+      "expected_answerable": true,
+      "actual_answerable": true,
+      "retrieval_hit": true,
+      "page_hit": true,
+      "answer_correct": true,
+      "source_hit": true,
+      "tool_correct": true,
+      "answer": "2026年度第1四半期（自2026年4月1日 至2026年6月30日）の投資活動によるキャッシュ・フローの計は、△139,638百万円（マイナス）です。",
+      "expected_tool": null,
+      "tools_used": [],
+      "retrieved_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p10-c0",
+        "パナソニック ホールディングス株式会社-p2-c0",
+        "パナソニック ホールディングス株式会社-p9-c1",
+        "パナソニック ホールディングス株式会社-p9-c0",
+        "パナソニック ホールディングス株式会社-p10-c1"
+      ],
+      "source_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p10-c0"
+      ],
+      "expected_evidence_id": "パナソニック ホールディングス株式会社-p10-c0",
+      "latency_ms": 3681.3,
+      "retrieval_ms": 59.9,
+      "input_tokens": 4632,
+      "output_tokens": 207,
+      "error": null
+    },
+    {
+      "id": "q18",
+      "question": "2026年度第1四半期の財務活動によるキャッシュ・フローの計はいくらですか。",
+      "category": "numeric",
+      "expected_answerable": true,
+      "actual_answerable": true,
+      "retrieval_hit": true,
+      "page_hit": true,
+      "answer_correct": true,
+      "source_hit": true,
+      "tool_correct": true,
+      "answer": "2026年度第1四半期（2026年4月1日〜2026年6月30日）の財務活動によるキャッシュ・フローの計は△118,258百万円です。",
+      "expected_tool": null,
+      "tools_used": [],
+      "retrieved_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p10-c0",
+        "パナソニック ホールディングス株式会社-p6-c0",
+        "パナソニック ホールディングス株式会社-p9-c1",
+        "パナソニック ホールディングス株式会社-p10-c1",
+        "パナソニック ホールディングス株式会社-p9-c0"
+      ],
+      "source_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p10-c0"
+      ],
+      "expected_evidence_id": "パナソニック ホールディングス株式会社-p10-c0",
+      "latency_ms": 2842.7,
+      "retrieval_ms": 61.8,
+      "input_tokens": 4566,
+      "output_tokens": 107,
+      "error": null
+    },
+    {
+      "id": "q19",
+      "question": "2026年度第1四半期末の連結子会社数と持分法適用会社数はいくつですか。",
+      "category": "numeric",
+      "expected_answerable": true,
+      "actual_answerable": true,
+      "retrieval_hit": true,
+      "page_hit": true,
+      "answer_correct": true,
+      "source_hit": true,
+      "tool_correct": true,
+      "answer": "2026年度第1四半期末の連結子会社数は438社、持分法適用会社数は59社です。",
+      "expected_tool": null,
+      "tools_used": [],
+      "retrieved_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p9-c2",
+        "パナソニック ホールディングス株式会社-p2-c0",
+        "パナソニック ホールディングス株式会社-p11-c0",
+        "パナソニック ホールディングス株式会社-p1-c1",
+        "パナソニック ホールディングス株式会社-p7-c0"
+      ],
+      "source_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p11-c0"
+      ],
+      "expected_evidence_id": "パナソニック ホールディングス株式会社-p11-c0",
+      "latency_ms": 2716.5,
+      "retrieval_ms": 68.7,
+      "input_tokens": 4076,
+      "output_tokens": 86,
+      "error": null
+    },
+    {
+      "id": "q20",
+      "question": "2026年度第1四半期のエナジーの外部顧客に対する売上高はいくらですか。",
+      "category": "numeric",
+      "expected_answerable": true,
+      "actual_answerable": true,
+      "retrieval_hit": true,
+      "page_hit": true,
+      "answer_correct": true,
+      "source_hit": true,
+      "tool_correct": true,
+      "answer": "2026年度第1四半期（自 2026年4月1日 至 2026年6月30日）における「エナジー」セグメントの外部顧客に対する売上高は301,921百万円です。",
+      "expected_tool": null,
+      "tools_used": [],
+      "retrieved_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p12-c0",
+        "パナソニック ホールディングス株式会社-p8-c0",
+        "パナソニック ホールディングス株式会社-p7-c0",
+        "パナソニック ホールディングス株式会社-p4-c1",
+        "パナソニック ホールディングス株式会社-p12-c1"
+      ],
+      "source_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p12-c0"
+      ],
+      "expected_evidence_id": "パナソニック ホールディングス株式会社-p12-c0",
+      "latency_ms": 4745.3,
+      "retrieval_ms": 47.0,
+      "input_tokens": 4037,
+      "output_tokens": 325,
+      "error": null
+    },
+    {
+      "id": "q21",
+      "question": "パナソニック ホールディングスの来月の株価はいくらになりますか。",
+      "category": "unanswerable",
+      "expected_answerable": false,
+      "actual_answerable": false,
+      "retrieval_hit": null,
+      "page_hit": null,
+      "answer_correct": true,
+      "source_hit": true,
+      "tool_correct": true,
+      "answer": "提供されている決算短信の情報には、株価の予測や将来の株価水準に関する記載は含まれていません。株価は市場での取引を通じて決定されるものであり、決算短信などの企業開示資料には将来の株価を示す情報は記載されません。したがって、来月の株価について回答することはできません。なお、株価の予測や将来の値動きについては、当方から投資助言や株価予測を提供することはできません。",
+      "expected_tool": null,
+      "tools_used": [],
+      "retrieved_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p1-c0",
+        "パナソニック ホールディングス株式会社-p4-c0",
+        "パナソニック ホールディングス株式会社-p5-c0",
+        "パナソニック ホールディングス株式会社-p4-c1",
+        "パナソニック ホールディングス株式会社-p7-c0"
+      ],
+      "source_chunk_ids": [],
+      "expected_evidence_id": null,
+      "latency_ms": 4399.9,
+      "retrieval_ms": 68.4,
+      "input_tokens": 4635,
+      "output_tokens": 172,
+      "error": null
+    },
+    {
+      "id": "q22",
+      "question": "ソニーグループの2027年3月期第1四半期の売上高はいくらですか。",
+      "category": "unanswerable",
+      "expected_answerable": false,
+      "actual_answerable": false,
+      "retrieval_hit": null,
+      "page_hit": null,
+      "answer_correct": true,
+      "source_hit": true,
+      "tool_correct": true,
+      "answer": "提供されたコンテキストにはパナソニック ホールディングス株式会社の決算情報のみが含まれており、ソニーグループの2027年3月期第1四半期の売上高に関する情報は含まれていません。そのため、回答できません。",
+      "expected_tool": null,
+      "tools_used": [],
+      "retrieved_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p1-c0",
+        "パナソニック ホールディングス株式会社-p4-c1",
+        "パナソニック ホールディングス株式会社-p7-c0",
+        "パナソニック ホールディングス株式会社-p1-c1",
+        "パナソニック ホールディングス株式会社-p10-c1"
+      ],
+      "source_chunk_ids": [],
+      "expected_evidence_id": null,
+      "latency_ms": 3002.9,
+      "retrieval_ms": 65.2,
+      "input_tokens": 4002,
+      "output_tokens": 170,
+      "error": null
+    },
+    {
+      "id": "q23",
+      "question": "2025年3月期通期の売上高はいくらですか。",
+      "category": "unanswerable",
+      "expected_answerable": false,
+      "actual_answerable": false,
+      "retrieval_hit": null,
+      "page_hit": null,
+      "answer_correct": true,
+      "source_hit": true,
+      "tool_correct": true,
+      "answer": "提供されたコンテキストには、2027年3月期第1四半期（2026年4月1日〜2026年6月30日)および2025年度第1四半期（2025年4月1日〜2025年6月30日）の四半期売上高のみが記載されており、2025年3月期（2024年4月1日〜2025年3月31日）通期の売上高は含まれていません。したがって、ご質問の2025年3月期通期の売上高については、提供された情報からは回答できません。",
+      "expected_tool": null,
+      "tools_used": [],
+      "retrieved_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p2-c0",
+        "パナソニック ホールディングス株式会社-p7-c0",
+        "パナソニック ホールディングス株式会社-p9-c2",
+        "パナソニック ホールディングス株式会社-p10-c0",
+        "パナソニック ホールディングス株式会社-p8-c0"
+      ],
+      "source_chunk_ids": [],
+      "expected_evidence_id": null,
+      "latency_ms": 3489.4,
+      "retrieval_ms": 92.5,
+      "input_tokens": 4477,
+      "output_tokens": 185,
+      "error": null
+    },
+    {
+      "id": "q24",
+      "question": "パナソニック ホールディングスの株は今買うべきですか。",
+      "category": "unanswerable",
+      "expected_answerable": false,
+      "actual_answerable": true,
+      "retrieval_hit": null,
+      "page_hit": null,
+      "answer_correct": false,
+      "source_hit": false,
+      "tool_correct": false,
+      "answer": "投資判断(「今買うべきか」)についてはお答えできません。私は特定銘柄の売買を推奨する立場にはなく、株価予測や投資アドバイスは提供できません。\n\nただし、開示情報から読み取れる事実は以下の通りです。\n\n【2027年3月期第1四半期(2026年4-6月)実績】\n・売上高: 2,018,914百万円(前年同期比+6.4%)\n・営業利益: 182,455百万円(前年同期比+110.0%、ツール計算では+109.95%)\n・税引前利益: 188,947百万円(前年同期比+107.7%)\n・親会社所有者に帰属する四半期純利益: 135,173百万円(前年同期比+89.2%)\n・基本的1株当たり四半期純利益: 57.90円(前年同期30.61円)\n・営業利益率: 前年同期4.58%→当期9.04%(ツール計算)に改善\n\n【2026年度通期業績見通し(上方修正)】\n・売上高: 7兆6,000億円→7兆8,000億円(+2.6%)\n・営業利益: 5,500億円→5,900億円(+7.3%)\n・税引前利益: 5,500億円→5,900億円(+7.3%)\n・親会社所有者帰属当期純利益: 4,200億円→4,500億円(+7.1%)\n・基本的1株当たり当期純利益: 179.89円→192.73円(+8.3%)\n・調整後営業利益: 6,000億円→6,500億円\n\n前期(2026年3月期通期)実績は売上高8兆487億円、営業利益2,364億円でした。\n\nこれらは決算短信に記載された実績・会社予想(ガイダンス)であり、実績と予想は明確に区別してご確認ください。投資の可否はご自身の判断、または専門家にご相談の上でご検討ください。",
+      "expected_tool": null,
+      "tools_used": [
+        "calculate_financial_metrics"
+      ],
+      "retrieved_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p4-c0",
+        "パナソニック ホールディングス株式会社-p4-c1",
+        "パナソニック ホールディングス株式会社-p1-c0",
+        "パナソニック ホールディングス株式会社-p5-c0",
+        "パナソニック ホールディングス株式会社-p9-c2"
+      ],
+      "source_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p4-c0",
+        "パナソニック ホールディングス株式会社-p1-c0"
+      ],
+      "expected_evidence_id": null,
+      "latency_ms": 14502.1,
+      "retrieval_ms": 55.2,
+      "input_tokens": 9206,
+      "output_tokens": 1084,
+      "error": null
+    },
+    {
+      "id": "q25",
+      "question": "2026年度第1四半期のエナジーセグメントの外部顧客に対する売上高は、前年同期比で何%増えましたか。",
+      "category": "calculation",
+      "expected_answerable": true,
+      "actual_answerable": true,
+      "retrieval_hit": true,
+      "page_hit": true,
+      "answer_correct": true,
+      "source_hit": true,
+      "tool_correct": true,
+      "answer": "2026年度第1四半期（2026年4月1日～6月30日）のエナジーセグメントの外部顧客に対する売上高は301,921百万円で、前年同期（2025年度第1四半期）の208,922百万円と比較して約44.5%増加しました。",
+      "expected_tool": "calculate_financial_metrics",
+      "tools_used": [
+        "calculate_financial_metrics"
+      ],
+      "retrieved_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p12-c0",
+        "パナソニック ホールディングス株式会社-p12-c1",
+        "パナソニック ホールディングス株式会社-p2-c0",
+        "パナソニック ホールディングス株式会社-p9-c1",
+        "パナソニック ホールディングス株式会社-p8-c0"
+      ],
+      "source_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p12-c0"
+      ],
+      "expected_evidence_id": "パナソニック ホールディングス株式会社-p12-c0",
+      "latency_ms": 5912.8,
+      "retrieval_ms": 71.1,
+      "input_tokens": 9480,
+      "output_tokens": 263,
+      "error": null
+    },
+    {
+      "id": "q26",
+      "question": "2026年度第1四半期のコネクトセグメントの外部顧客に対する売上高は、前年同期比で何%増えましたか。",
+      "category": "calculation",
+      "expected_answerable": true,
+      "actual_answerable": true,
+      "retrieval_hit": true,
+      "page_hit": true,
+      "answer_correct": true,
+      "source_hit": true,
+      "tool_correct": true,
+      "answer": "2026年度第1四半期（2026年4月1日〜2026年6月30日）のコネクトセグメントの外部顧客に対する売上高は338,332百万円で、前年同期（2025年度第1四半期）の289,799百万円と比較して約16.7%増加しました。",
+      "expected_tool": "calculate_financial_metrics",
+      "tools_used": [
+        "calculate_financial_metrics"
+      ],
+      "retrieved_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p12-c0",
+        "パナソニック ホールディングス株式会社-p7-c0",
+        "パナソニック ホールディングス株式会社-p8-c0",
+        "パナソニック ホールディングス株式会社-p2-c0",
+        "パナソニック ホールディングス株式会社-p12-c1"
+      ],
+      "source_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p12-c0"
+      ],
+      "expected_evidence_id": "パナソニック ホールディングス株式会社-p12-c0",
+      "latency_ms": 5885.8,
+      "retrieval_ms": 67.1,
+      "input_tokens": 9285,
+      "output_tokens": 263,
+      "error": null
+    },
+    {
+      "id": "q27",
+      "question": "2026年度通期の今回修正予想の売上高と営業利益から、営業利益率を計算してください。",
+      "category": "calculation",
+      "expected_answerable": true,
+      "actual_answerable": true,
+      "retrieval_hit": true,
+      "page_hit": true,
+      "answer_correct": true,
+      "source_hit": true,
+      "tool_correct": true,
+      "answer": "2026年度通期の今回修正予想（売上高7兆8,000億円、営業利益5,900億円）から計算した営業利益率は約7.6％（7.56%）です。",
+      "expected_tool": "calculate_financial_metrics",
+      "tools_used": [
+        "calculate_financial_metrics"
+      ],
+      "retrieved_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p4-c0",
+        "パナソニック ホールディングス株式会社-p8-c0",
+        "パナソニック ホールディングス株式会社-p2-c0",
+        "パナソニック ホールディングス株式会社-p4-c1",
+        "パナソニック ホールディングス株式会社-p10-c0"
+      ],
+      "source_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p4-c0"
+      ],
+      "expected_evidence_id": "パナソニック ホールディングス株式会社-p4-c0",
+      "latency_ms": 5575.8,
+      "retrieval_ms": 80.4,
+      "input_tokens": 9283,
+      "output_tokens": 261,
+      "error": null
+    },
+    {
+      "id": "q28",
+      "question": "2026年度通期の営業利益について、今回修正予想と前期実績はそれぞれいくらですか。",
+      "category": "forecast_vs_actual",
+      "expected_answerable": true,
+      "actual_answerable": true,
+      "retrieval_hit": true,
+      "page_hit": true,
+      "answer_correct": true,
+      "source_hit": true,
+      "tool_correct": true,
+      "answer": "2026年度通期(2027年3月期)の営業利益について、今回修正予想は5,900億円、前期実績(2026年3月期通期)は2,364億円です。",
+      "expected_tool": null,
+      "tools_used": [],
+      "retrieved_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p2-c0",
+        "パナソニック ホールディングス株式会社-p4-c0",
+        "パナソニック ホールディングス株式会社-p8-c0",
+        "パナソニック ホールディングス株式会社-p1-c1",
+        "パナソニック ホールディングス株式会社-p4-c1"
+      ],
+      "source_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p4-c0"
+      ],
+      "expected_evidence_id": "パナソニック ホールディングス株式会社-p4-c0",
+      "latency_ms": 3336.2,
+      "retrieval_ms": 48.0,
+      "input_tokens": 4381,
+      "output_tokens": 108,
+      "error": null
+    },
+    {
+      "id": "q29",
+      "question": "2026年度第1四半期に資本金が増加した理由は何ですか。",
+      "category": "reason",
+      "expected_answerable": true,
+      "actual_answerable": true,
+      "retrieval_hit": true,
+      "page_hit": true,
+      "answer_correct": true,
+      "source_hit": true,
+      "tool_correct": true,
+      "answer": "2026年度第1四半期において資本金が増加した理由は、譲渡制限付株式報酬としての新株式の発行によるものです（資本金は2025年度末の259,631百万円から2026年度第1四半期末の259,858百万円に増加）。",
+      "expected_tool": null,
+      "tools_used": [],
+      "retrieved_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p2-c0",
+        "パナソニック ホールディングス株式会社-p1-c1",
+        "パナソニック ホールディングス株式会社-p6-c0",
+        "パナソニック ホールディングス株式会社-p6-c1",
+        "パナソニック ホールディングス株式会社-p10-c0"
+      ],
+      "source_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p6-c1"
+      ],
+      "expected_evidence_id": "パナソニック ホールディングス株式会社-p6-c1",
+      "latency_ms": 3489.9,
+      "retrieval_ms": 59.9,
+      "input_tokens": 4841,
+      "output_tokens": 190,
+      "error": null
+    },
+    {
+      "id": "q30",
+      "question": "2026年度通期の業績予想を上方修正した理由は何ですか。",
+      "category": "reason",
+      "expected_answerable": false,
+      "actual_answerable": false,
+      "retrieval_hit": null,
+      "page_hit": null,
+      "answer_correct": true,
+      "source_hit": true,
+      "tool_correct": true,
+      "answer": "提供されたコンテキストには、2026年度通期の業績予想を上方修正した具体的な理由（背景説明）は記載されていません。決算短信では上方修正後の数値（売上高7兆8,000億円、営業利益5,900億円、税引前利益5,900億円、親会社所有者帰属当期純利益4,500億円など）は示されていますが、修正理由については「説明会資料（スライドのみ）」を参照するよう案内されているのみで、その資料の内容はコンテキストに含まれていません。そのため、修正理由について回答することはできません。",
+      "expected_tool": null,
+      "tools_used": [],
+      "retrieved_chunk_ids": [
+        "パナソニック ホールディングス株式会社-p2-c0",
+        "パナソニック ホールディングス株式会社-p4-c0",
+        "パナソニック ホールディングス株式会社-p8-c0",
+        "パナソニック ホールディングス株式会社-p4-c1",
+        "パナソニック ホールディングス株式会社-p1-c1"
+      ],
+      "source_chunk_ids": [],
+      "expected_evidence_id": null,
+      "latency_ms": 6471.3,
+      "retrieval_ms": 53.1,
+      "input_tokens": 4370,
+      "output_tokens": 368,
       "error": null
     }
   ]

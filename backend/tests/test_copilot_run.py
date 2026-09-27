@@ -39,8 +39,10 @@ class FakeMessages:
     def __init__(self, responses: list) -> None:
         self.responses = responses
         self.calls = 0
+        self.last_messages: list = []
 
     def parse(self, **kwargs):
+        self.last_messages = kwargs["messages"]
         response = self.responses[self.calls]
         self.calls += 1
         return response
@@ -193,4 +195,42 @@ def test_execute_copilot_tool_failure(monkeypatch) -> None:
     run = execute_copilot("売上高成長率は？")
 
     assert fake.calls == 2  # 失敗を伝えたあと、もう一度 Claude を呼んでいる
+    assert run.tools_used == []
+
+
+def test_execute_copilot_rejects_tool_outside_allowlist(monkeypatch) -> None:
+    """
+    許可リストにないツールは実行せず、is_error の tool_result を Claude に返す。
+    """
+
+    unknown_block = SimpleNamespace(
+        type="tool_use",
+        id="toolu_1",
+        name="delete_database",
+        input={},
+    )
+
+    tool_use = SimpleNamespace(
+        stop_reason="tool_use",
+        content=[unknown_block],
+        parsed_output=None,
+        usage=SimpleNamespace(input_tokens=80, output_tokens=10),
+    )
+
+    answer = CopilotAnswer(
+        answer="その操作はできません。",
+        is_answerable=False,
+    )
+
+    fake = setup_fakes(
+        monkeypatch,
+        [tool_use, final_response(answer)],
+    )
+
+    run = execute_copilot("データベースを消して")
+
+    tool_result = fake.last_messages[-1]["content"][0]
+
+    assert tool_result["tool_use_id"] == "toolu_1"
+    assert tool_result["is_error"] is True
     assert run.tools_used == []
