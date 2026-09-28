@@ -2,7 +2,12 @@
 Copilot の実行結果の採点と集計のテスト。Claude API は呼ばない。
 """
 
-from research_copilot.agent.models import CopilotAnswer, CopilotRun, ResearchSource
+from research_copilot.agent.models import (
+    CopilotAnswer,
+    CopilotRun,
+    ResearchSource,
+    ToolCall,
+)
 from research_copilot.evaluation.metrics import percentile, summarize
 from research_copilot.evaluation.models import GoldenCase
 from research_copilot.evaluation.scoring import score_case
@@ -14,6 +19,7 @@ def make_run(
     is_answerable: bool,
     source_ids: list[str],
     tools_used: list[str] | None = None,
+    tool_calls: list[ToolCall] | None = None,
 ) -> CopilotRun:
     chunk = Chunk(
         chunk_id="ex-p7-c0",
@@ -50,6 +56,7 @@ def make_run(
         total_ms=1000.0,
         input_tokens=100,
         output_tokens=20,
+        tool_calls=tool_calls or [],
     )
 
 
@@ -141,3 +148,78 @@ def test_summarize_counts_source_attribution_only_for_answered() -> None:
     assert summary["source_attribution_rate"] == 0.0  # 答えた 1 件に出典がない
     assert summary["answer_accuracy"] == 0.5
     assert summary["latency_ms_p50"] == 1000.0
+
+
+def make_case(
+    expected_tool: str | None, allowed_tools: list[str] | None = None
+) -> GoldenCase:
+    return GoldenCase(
+        id="t",
+        question="q",
+        expected_answer="a",
+        expected_answerable=False,
+        evidence_id=None,
+        evidence_page=None,
+        required_terms=[],
+        expected_tool=expected_tool,
+        allowed_tools=allowed_tools or [],
+    )
+
+
+def call(
+    name: str,
+    succeeded: bool = True,
+) -> ToolCall:
+    return ToolCall(
+        name=name,
+        input={},
+        succeeded=succeeded,
+    )
+
+
+def test_failed_unneeded_tool_call_is_still_wrong() -> None:
+    """
+    空の入力ツールを呼び、失敗した。失敗しても「呼んだ」ので誤り。
+    """
+
+    run = make_run(
+        "答え",
+        False,
+        [],
+        tool_calls=[call("calculate_financial_metrics", False)],
+    )
+
+    result = score_case(make_case(expected_tool=None), run)
+
+    assert result.tools_used == []
+    assert result.tools_attempted == ["calculate_financial_metrics"]
+    assert result.tool_correct is False
+
+
+def test_allowed_tool_is_not_wrong() -> None:
+    run = make_run(
+        "答え",
+        False,
+        [],
+        tool_calls=[call("list_available_filings")],
+    )
+
+    case = make_case(
+        expected_tool=None,
+        allowed_tools=["list_available_filings"],
+    )
+
+    assert score_case(case, run).tool_correct is True
+
+
+def test_extra_tool_besides_expected_is_wrong() -> None:
+    run = make_run(
+        "答え",
+        False,
+        [],
+        tool_calls=[call("search_filing"), call("calculate_financial_metrics")],
+    )
+
+    case = make_case(expected_tool="calculate_financial_metrics")
+
+    assert score_case(case, run).tool_correct is False

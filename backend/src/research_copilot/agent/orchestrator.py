@@ -11,7 +11,7 @@ from ..llm import create_client, get_model
 from ..retrieval.models import Chunk
 from ..retrieval.search import search
 from ..tools.registry import TOOLS, execute_tool
-from .models import CopilotAnswer, CopilotRun, ResearchSource
+from .models import CopilotAnswer, CopilotRun, ResearchSource, ToolCall
 from .prompts import SYSTEM_PROMPT, build_user_message
 
 logger = logging.getLogger(__name__)
@@ -67,6 +67,8 @@ def execute_copilot(
 
     tools_used: list[str] = []
 
+    tool_calls: list[ToolCall] = []
+
     input_tokens = 0
     output_tokens = 0
 
@@ -113,6 +115,14 @@ def execute_copilot(
 
                 tool_results.append(tool_result)
 
+                tool_calls.append(
+                    ToolCall(
+                        name=block.name,
+                        input=dict(block.input),
+                        succeeded=succeeded,
+                    )
+                )
+
                 if succeeded and block.name not in tools_used:
                     tools_used.append(block.name)
 
@@ -139,6 +149,7 @@ def execute_copilot(
             results=results,
             sources=validate_sources(answer, results),
             tools_used=tools_used,
+            tool_calls=tool_calls,
             retrieval_ms=retrieval_ms,
             total_ms=(perf_counter() - started) * 1000,
             input_tokens=input_tokens,
@@ -176,6 +187,7 @@ def _run_tool(
                 "event": "tool_failed",
                 "request_id": request_id,
                 "tool_name": block.name,
+                "tool_input": block.input,
                 "tool_success": False,
                 "tool_latency_ms": round(tool_ms, 2),
             },
@@ -198,6 +210,7 @@ def _run_tool(
         extra={
             "event": "tool_completed",
             "request_id": request_id,
+            "tool_input": block.input,
             "tool_output": result,
             "tool_name": block.name,
             "tool_success": True,

@@ -234,3 +234,42 @@ def test_execute_copilot_rejects_tool_outside_allowlist(monkeypatch) -> None:
     assert tool_result["tool_use_id"] == "toolu_1"
     assert tool_result["is_error"] is True
     assert run.tools_used == []
+
+
+def test_execute_copilot_records_failed_tool_call(monkeypatch) -> None:
+    """
+    失敗した呼び出しも、入力と一緒に tool_calls に残る（tools_used には入らない）。
+    """
+
+    empty_block = SimpleNamespace(
+        type="tool_use",
+        id="toolu_1",
+        name="calculate_financial_metrics",
+        input={},
+    )
+
+    tool_use = SimpleNamespace(
+        stop_reason="tool_use",
+        content=[empty_block],
+        parsed_output=None,
+        usage=SimpleNamespace(input_tokens=80, output_tokens=10),
+    )
+
+    answer = CopilotAnswer(
+        answer="棚卸資産は1,179,799百万円です。",
+        is_answerable=True,
+        source_chunk_ids=["ex-p7-c0"],
+    )
+
+    setup_fakes(
+        monkeypatch,
+        [tool_use, final_response(answer)],
+    )
+
+    run = execute_copilot("棚卸資産は？")
+
+    assert run.tools_used == []
+
+    assert [(call.name, call.input, call.succeeded) for call in run.tool_calls] == [
+        ("calculate_financial_metrics", {}, False)
+    ]

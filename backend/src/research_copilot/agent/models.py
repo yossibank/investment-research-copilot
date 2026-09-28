@@ -2,12 +2,23 @@
 Copilot の回答と実行結果の型。API と評価の両方から使う。
 """
 
-from dataclasses import dataclass
-from typing import Self
+from dataclasses import dataclass, field
+from typing import Any, Self
 
 from pydantic import BaseModel, Field
 
 from ..retrieval.models import Chunk
+
+
+class ToolCall(BaseModel):
+    """
+    Claude が要求したツール呼び出し 1 回分。
+    失敗した呼び出しも残す。
+    """
+
+    name: str
+    input: dict[str, Any]
+    succeeded: bool
 
 
 class ResearchSource(BaseModel):
@@ -65,3 +76,5 @@ class CopilotRun:
     total_ms: float
     input_tokens: int
     output_tokens: int
+    # 成功・失敗を問わず、要求された順のツール呼び出し
+    tool_calls: list[ToolCall] = field(default_factory=list)

@@ -21,7 +21,6 @@ def percentile(values: list[float], p: float) -> float | None:
     return ordered[max(rank, 1) - 1]
 
 
-
 def rate(flags: list[bool]) -> float | None:
     """
     True の割合を返す。対象が 0 件なら None（0% と区別するため）。
@@ -32,6 +31,16 @@ def rate(flags: list[bool]) -> float | None:
 
     return sum(flags) / len(flags)
 
+
+def total(values: list[int]) -> int | None:
+    """
+    合計を返す。対象が 0 件なら None（0 と区別するため）。
+    """
+
+    if not values:
+        return None
+
+    return sum(values)
 
 
 def summarize(results: list[EvalResult]) -> dict:
@@ -67,14 +76,11 @@ def summarize(results: list[EvalResult]) -> dict:
             [len(r.source_chunk_ids) > 0 for r in answered]
         ),
         "tool_selection_accuracy": rate([r.tool_correct for r in results]),
+        "tool_calls_total": sum(len(r.tools_attempted) for r in results),
         "latency_ms_p50": percentile(latencies, 50),
         "latency_ms_p95": percentile(latencies, 95),
-        "input_tokens_total": sum(r.input_tokens or 0 for r in token_results)
-        if token_results
-        else None,
-        "output_tokens_total": sum(r.output_tokens or 0 for r in token_results)
-        if token_results
-        else None,
+        "input_tokens_total": total([r.input_tokens or 0 for r in token_results]),
+        "output_tokens_total": total([r.output_tokens or 0 for r in token_results]),
         # 料金はモデルと時期で変わるため、ここでは計算しない。
         "cost_usd": None,
         "cost_note": "未測定（トークン数のみ記録）",

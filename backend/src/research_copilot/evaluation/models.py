@@ -19,6 +19,7 @@ class GoldenCase(BaseModel):
     required_terms: list[str]
     category: str = "numeric"
     expected_tool: str | None = None
+    allowed_tools: list[str] = Field(default_factory=list)
 
 
 class EvalResult(BaseModel):
@@ -39,6 +40,7 @@ class EvalResult(BaseModel):
     answer: str
     expected_tool: str | None = None
     tools_used: list[str] = Field(default_factory=list)
+    tools_attempted: list[str] = Field(default_factory=list)
     retrieved_chunk_ids: list[str] = Field(default_factory=list)
     source_chunk_ids: list[str] = Field(default_factory=list)
     expected_evidence_id: str | None

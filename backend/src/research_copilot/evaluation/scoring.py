@@ -24,7 +24,6 @@ def normalize_text(text: str) -> str:
     return text.lower().replace(" ", "").replace("\n", "").replace(",", "")
 
 
-
 def contains_required_terms(
     answer: str,
     required_terms: list[str],
@@ -36,7 +35,6 @@ def contains_required_terms(
     normalized_answer = normalize_text(answer)
 
     return all(normalize_text(term) in normalized_answer for term in required_terms)
-
 
 
 def score_case(case: GoldenCase, run: CopilotRun) -> EvalResult:
@@ -77,11 +75,13 @@ def score_case(case: GoldenCase, run: CopilotRun) -> EvalResult:
         # 答えられないのに出典を付けていないか。
         source_hit = len(source_ids) == 0
 
+    tools_attempted = [call.name for call in run.tool_calls]
+
     # ツール選択:
     #   expected_tool あり → そのツールを使った
     #   expected_tool なし → ツールを 1 つも使っていない
     if case.expected_tool is None:
-        tool_correct = len(run.tools_used) == 0
+        tool_correct = is_tool_selection_correct(case, tools_attempted)
     else:
         tool_correct = case.expected_tool in run.tools_used
 
@@ -99,6 +99,7 @@ def score_case(case: GoldenCase, run: CopilotRun) -> EvalResult:
         answer=answer.answer,
         expected_tool=case.expected_tool,
         tools_used=run.tools_used,
+        tools_attempted=tools_attempted,
         retrieved_chunk_ids=retrieved_ids,
         source_chunk_ids=source_ids,
         expected_evidence_id=case.evidence_id,
@@ -107,7 +108,6 @@ def score_case(case: GoldenCase, run: CopilotRun) -> EvalResult:
         input_tokens=run.input_tokens,
         output_tokens=run.output_tokens,
     )
-
 
 
 def failed_result(case: GoldenCase, error: Exception) -> EvalResult:
@@ -131,3 +131,25 @@ def failed_result(case: GoldenCase, error: Exception) -> EvalResult:
         expected_evidence_id=case.evidence_id,
         error=f"{type(error).__name__}: {error}",
     )
+
+
+def is_tool_selection_correct(
+    case: GoldenCase,
+    tools_attempted: list[str],
+) -> bool:
+    """
+    ツールの選び方が正しいかを、成功・失敗を問わず「呼ぼうとしたツール」で判定する。
+
+    - expected_tool があれば、それを呼んでいる
+    - expected_tool と allowed_tools 以外は呼んでいない
+    """
+
+    permitted = set(case.allowed_tools)
+
+    if case.expected_tool is not None:
+        if case.expected_tool not in tools_attempted:
+            return False
+
+        permitted.add(case.expected_tool)
+
+    return set(tools_attempted) <= permitted
