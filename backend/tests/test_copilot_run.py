@@ -273,3 +273,46 @@ def test_execute_copilot_records_failed_tool_call(monkeypatch) -> None:
     assert [(call.name, call.input, call.succeeded) for call in run.tool_calls] == [
         ("calculate_financial_metrics", {}, False)
     ]
+
+
+def test_execute_copilot_accepts_source_from_search_tool(monkeypatch) -> None:
+    """
+    追加検索で見つけたチャンクは出典として認める。
+    """
+
+    from research_copilot.tools import search_tool
+
+    extra_chunk = make_chunk("ex-p6-c1", 6)
+
+    monkeypatch.setattr(
+        search_tool,
+        "search",
+        lambda query, top_k: [(extra_chunk, 0.7)],
+    )
+
+    search_block = SimpleNamespace(
+        type="tool_use",
+        id="toolu_1",
+        name="search_filing",
+        input={"query": "資本合計"},
+    )
+
+    tool_use = SimpleNamespace(
+        stop_reason="tool_use",
+        content=[search_block],
+        parsed_output=None,
+        usage=SimpleNamespace(input_tokens=80, output_tokens=10),
+    )
+
+    answer = CopilotAnswer(
+        answer="資本合計は5,574,729百万円です。",
+        is_answerable=True,
+        source_chunk_ids=["ex-p6-c1"],
+    )
+
+    setup_fakes(monkeypatch, [tool_use, final_response(answer)])
+
+    run = execute_copilot("資本合計は？")
+
+    assert [source.chunk_id for source in run.sources] == ["ex-p6-c1"]
+    assert "ex-p6-c1" not in [chunk.chunk_id for chunk, _ in run.results]

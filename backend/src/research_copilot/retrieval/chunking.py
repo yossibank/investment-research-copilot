@@ -4,14 +4,8 @@
 
 import json
 
-from ..paths import CHUNKS_PATH, DATA_DIR, PAGES_PATH
-from .models import (
-    Chunk,
-    DocumentMetadata,
-    PageText,
-)
-
-METADATA_PATH = DATA_DIR / "metadata.json"
+from ..paths import CHUNKS_PATH, METADATA_PATH, PAGES_PATH
+from .models import Chunk, DocumentMetadata, PageText
 
 
 def chunk_text(

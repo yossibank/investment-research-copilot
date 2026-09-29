@@ -2,15 +2,18 @@
 Copilot の中心の処理（検索 → Claude → ツール実行 → 出典の検証）。Claude API を呼ぶ。
 """
 
+import json
 import logging
 from time import perf_counter
 
 from anthropic.types import MessageParam, ToolResultBlockParam, ToolUseBlock
+from pydantic import BaseModel
 
 from ..llm import create_client, get_model
 from ..retrieval.models import Chunk
 from ..retrieval.search import search
-from ..tools.registry import TOOLS, execute_tool
+from ..tools.registry import TOOLS, run_tool
+from ..tools.search_tool import SearchFilingResult
 from .models import CopilotAnswer, CopilotRun, ResearchSource, ToolCall
 from .prompts import SYSTEM_PROMPT, build_user_message
 
@@ -69,6 +72,9 @@ def execute_copilot(
 
     tool_calls: list[ToolCall] = []
 
+    # 出典として認めるチャンク。最初の検索結果に、追加検索で見つけたものを足していく。
+    evidence: list[tuple[Chunk, float]] = list(results)
+
     input_tokens = 0
     output_tokens = 0
 
@@ -111,7 +117,7 @@ def execute_copilot(
                 if block.type != "tool_use":
                     continue
 
-                tool_result, succeeded = _run_tool(block, request_id)
+                tool_result, output = _run_tool(block, request_id)
 
                 tool_results.append(tool_result)
 
@@ -119,12 +125,18 @@ def execute_copilot(
                     ToolCall(
                         name=block.name,
                         input=dict(block.input),
-                        succeeded=succeeded,
+                        succeeded=output is not None,
                     )
                 )
 
-                if succeeded and block.name not in tools_used:
+                if output is None:
+                    continue
+
+                if block.name not in tools_used:
                     tools_used.append(block.name)
+
+                if isinstance(output, SearchFilingResult):
+                    evidence.extend((hit.chunk, hit.score) for hit in output.hits)
 
             messages.append(
                 {
@@ -147,7 +159,7 @@ def execute_copilot(
         return CopilotRun(
             answer=answer,
             results=results,
-            sources=validate_sources(answer, results),
+            sources=validate_sources(answer, evidence),
             tools_used=tools_used,
             tool_calls=tool_calls,
             retrieval_ms=retrieval_ms,
@@ -162,18 +174,18 @@ def execute_copilot(
 def _run_tool(
     block: ToolUseBlock,
     request_id: str | None,
-) -> tuple[ToolResultBlockParam, bool]:
+) -> tuple[ToolResultBlockParam, BaseModel | None]:
     """
     Claude が要求したツールを 1 つ実行し、Claude に返す tool_result を作る。
 
     ツールが失敗しても例外は外に出さず、is_error 付きの tool_result にして
-    Claude に失敗を伝える。戻り値の 2 つ目は、実行に成功したかどうか。
+    Claude に失敗を伝える。戻り値の 2 つ目はツールの結果で、失敗した時は None。
     """
 
     tool_started = perf_counter()
 
     try:
-        result = execute_tool(
+        output = run_tool(
             name=block.name,
             tool_input=block.input,
         )
@@ -200,8 +212,13 @@ def _run_tool(
                 "content": "Tool execution failed.",
                 "is_error": True,
             },
-            False,
+            None,
         )
+
+    result = json.dumps(
+        output.model_dump(),
+        ensure_ascii=False,
+    )
 
     tool_ms = (perf_counter() - tool_started) * 1000
 
@@ -224,7 +241,7 @@ def _run_tool(
             "tool_use_id": block.id,
             "content": result,
         },
-        True,
+        output,
     )
 
 

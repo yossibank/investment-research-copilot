@@ -20,6 +20,8 @@ EVALUATION_DIR = REPO_ROOT / "evaluation"
 
 PAGES_PATH = DATA_DIR / "parsed" / "pages.json"
 
+METADATA_PATH = DATA_DIR / "metadata.json"
+
 CHUNKS_PATH = CACHE_DIR / "chunks.json"
 
 EMBEDDINGS_PATH = CACHE_DIR / "embeddings.npy"

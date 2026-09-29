@@ -38,7 +38,7 @@ Rules:
    cannot be answered.
 
 8. source_chunk_ids must contain only CHUNK_IDs
-   supplied in CONTEXT.
+   supplied in CONTEXT or returned by search_filing.
 
 9. Preserve financial periods, values, and units.
 

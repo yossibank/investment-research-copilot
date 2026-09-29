@@ -108,3 +108,61 @@ def test_signle_value_tool_input_is_rejected() -> None:
                 "current_revenue": 201894,
             },
         )
+
+
+def test_search_filing_returns_chunks(monkeypatch) -> None:
+    from research_copilot.retrieval.models import Chunk
+    from research_copilot.tools import search_tool
+
+    chunk = Chunk(
+        chunk_id="ex-p6-c1",
+        text="資本合計 5,574,729",
+        company="Example",
+        period="2027年3月期 第一四半期",
+        document_name="決算短信",
+        page=6,
+        source_url="https://exmaple.com",
+    )
+
+    monkeypatch.setattr(
+        search_tool,
+        "search",
+        lambda query, top_k: [(chunk, 0.8)],
+    )
+
+    result = json.loads(
+        execute_tool(
+            name="search_filing",
+            tool_input={"query": "資本合計"},
+        )
+    )
+
+    assert result["hits"][0]["chunk"]["chunk_id"] == "ex-p6-c1"
+
+
+def test_search_filing_rejects_blank_query() -> None:
+    with pytest.raises(ValueError, match="Invalid input for tool: search_filing"):
+        execute_tool(
+            name="search_filing",
+            tool_input={"query": "   "},
+        )
+
+
+def test_list_available_filings() -> None:
+    result = json.loads(
+        execute_tool(
+            name="list_available_filings",
+            tool_input={},
+        ),
+    )
+
+    assert len(result["filings"]) == 1
+    assert result["filings"][0]["company"]
+
+
+def test_list_available_filings_takes_no_arguments() -> None:
+    with pytest.raises(ValueError, match="Invalid input for tool"):
+        execute_tool(
+            name="list_available_filings",
+            tool_input={"company": "ソニーグループ"},
+        )
