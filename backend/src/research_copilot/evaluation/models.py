@@ -41,6 +41,7 @@ class EvalResult(BaseModel):
     expected_tool: str | None = None
     tools_used: list[str] = Field(default_factory=list)
     tools_attempted: list[str] = Field(default_factory=list)
+    tool_calls_failed: int = 0
     retrieved_chunk_ids: list[str] = Field(default_factory=list)
     source_chunk_ids: list[str] = Field(default_factory=list)
     expected_evidence_id: str | None

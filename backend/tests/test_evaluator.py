@@ -194,6 +194,7 @@ def test_failed_unneeded_tool_call_is_still_wrong() -> None:
     assert result.tools_used == []
     assert result.tools_attempted == ["calculate_financial_metrics"]
     assert result.tool_correct is False
+    assert result.tool_calls_failed == 1
 
 
 def test_allowed_tool_is_not_wrong() -> None:

@@ -77,6 +77,7 @@ def summarize(results: list[EvalResult]) -> dict:
         ),
         "tool_selection_accuracy": rate([r.tool_correct for r in results]),
         "tool_calls_total": sum(len(r.tools_attempted) for r in results),
+        "tool_calls_failed_total": sum(r.tool_calls_failed for r in results),
         "latency_ms_p50": percentile(latencies, 50),
         "latency_ms_p95": percentile(latencies, 95),
         "input_tokens_total": total([r.input_tokens or 0 for r in token_results]),

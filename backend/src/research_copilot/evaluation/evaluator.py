@@ -104,12 +104,25 @@ def evaluate(
     limit: int | None = None,
     top_k: int = 5,
     save_as: str | None = None,
+    ids: list[str] | None = None,
+    repeat: int = 1,
 ) -> dict:
     """
     評価データの全問で Copilot を実行して採点し、結果を evaluation/results/ に保存する。
+
+    ids で問題を絞るか repeat で繰り返したときは、全件の結果（latest.json）と
+    比べられないので、experiment.json に保存する。
     """
 
     cases = load_golden_cases(dataset)
+
+    if ids:
+        unknown = set(ids) - {case.id for case in cases}
+
+        if unknown:
+            raise RuntimeError(f"評価データにない ID です: {sorted(unknown)}")
+
+        cases = [case for case in cases if case.id in ids]
 
     if limit is not None:
         cases = cases[:limit]
@@ -117,16 +130,20 @@ def evaluate(
     if not cases:
         raise RuntimeError("No golden cases found.")
 
-    if save_as and limit is not None:
-        raise RuntimeError("--save-as は全件実行（--limit なし）のときだけ使えます。")
+    is_experiment = bool(ids) or repeat > 1
+
+    if save_as and (limit is not None or is_experiment):
+        raise RuntimeError("--save-as は全件を 1 回実行するときだけ使えます。")
 
     warmup_ms = warmup()
     print(f"warmup: {warmup_ms:.0f} ms")
 
     results: list[EvalResult] = []
 
-    for index, case in enumerate(cases, start=1):
-        print(f"[{index}/{len(cases)}] {case.id} {case.question}")
+    runs = [case for case in cases for _ in range(repeat)]
+
+    for index, case in enumerate(runs, start=1):
+        print(f"[{index}/{len(runs)}] {case.id} {case.question}")
 
         try:
             run = execute_copilot(case.question, top_k=top_k)
@@ -145,6 +162,8 @@ def evaluate(
             "top_k": top_k,
             "dataset": display_path(dataset),
             "limit": limit,
+            "ids": ids,
+            "repeat": repeat,
             "warmup_ms": round(warmup_ms, 1),
         },
         "summary": summarize(results),
@@ -155,7 +174,9 @@ def evaluate(
 
     text = json.dumps(report, ensure_ascii=False, indent=2)
 
-    (RESULTS_DIR / "latest.json").write_text(text + "\n", encoding="utf-8")
+    output_name = "experiment" if is_experiment else "latest"
+
+    (RESULTS_DIR / f"{output_name}.json").write_text(text + "\n", encoding="utf-8")
 
     if save_as:
         (RESULTS_DIR / f"{save_as}.json").write_text(text + "\n", encoding="utf-8")
@@ -175,6 +196,7 @@ def main() -> None:
         python -m research_copilot.evaluation.evaluator --limit 1
         python -m research_copilot.evaluation.evaluator --limit 3
         python -m research_copilot.evaluation.evaluator --save-as mvp-baseline
+        python -m research_copilot.evaluation.evaluator --ids q02,q25 --repeat 3
     """
 
     parser = argparse.ArgumentParser()
@@ -182,6 +204,8 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument("--save-as", type=str, default=None)
+    parser.add_argument("--ids", type=str, default=None)
+    parser.add_argument("--repeat", type=int, default=1)
 
     args = parser.parse_args()
 
@@ -190,6 +214,8 @@ def main() -> None:
         limit=args.limit,
         top_k=args.top_k,
         save_as=args.save_as,
+        ids=args.ids.split(",") if args.ids else None,
+        repeat=args.repeat,
     )
 
 

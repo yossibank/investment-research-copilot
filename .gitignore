@@ -26,3 +26,6 @@ data/raw/
 
 # macOS
 .DS_Store
+
+# Evaluation experiments (overwritten on every run)
+evaluation/results/experiment.json
