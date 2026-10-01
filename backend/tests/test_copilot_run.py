@@ -4,6 +4,7 @@ execute_copilot のテスト。検索と Claude API を偽物に差し替える�
 
 from types import SimpleNamespace
 
+import pytest
 from research_copilot.agent import orchestrator
 from research_copilot.agent.models import CopilotAnswer
 from research_copilot.agent.orchestrator import execute_copilot, validate_sources
@@ -41,7 +42,7 @@ class FakeMessages:
         self.calls = 0
         self.last_messages: list = []
 
-    def parse(self, **kwargs):
+    def create(self, **kwargs):
         self.last_messages = kwargs["messages"]
         response = self.responses[self.calls]
         self.calls += 1
@@ -51,10 +52,16 @@ class FakeMessages:
 def final_response(
     answer: CopilotAnswer, input_tokens: int = 100, output_tokens: int = 20
 ):
+    block = SimpleNamespace(
+        type="tool_use",
+        id="toolu_answer",
+        name="submit_answer",
+        input=answer.model_dump(),
+    )
+
     return SimpleNamespace(
-        stop_reason="end_turn",
-        content=[],
-        parsed_output=answer,
+        stop_reason="tool_use",
+        content=[block],
         usage=SimpleNamespace(
             input_tokens=input_tokens,
             output_tokens=output_tokens,
@@ -77,7 +84,6 @@ def tool_use_response():
     return SimpleNamespace(
         stop_reason="tool_use",
         content=[block],
-        parsed_output=None,
         usage=SimpleNamespace(
             input_tokens=80,
             output_tokens=10,
@@ -179,7 +185,6 @@ def test_execute_copilot_tool_failure(monkeypatch) -> None:
     tool_use = SimpleNamespace(
         stop_reason="tool_use",
         content=[bad_block],
-        parsed_output=None,
         usage=SimpleNamespace(input_tokens=80, output_tokens=10),
     )
 
@@ -214,7 +219,6 @@ def test_execute_copilot_rejects_tool_outside_allowlist(monkeypatch) -> None:
     tool_use = SimpleNamespace(
         stop_reason="tool_use",
         content=[unknown_block],
-        parsed_output=None,
         usage=SimpleNamespace(input_tokens=80, output_tokens=10),
     )
 
@@ -252,7 +256,6 @@ def test_execute_copilot_records_failed_tool_call(monkeypatch) -> None:
     tool_use = SimpleNamespace(
         stop_reason="tool_use",
         content=[empty_block],
-        parsed_output=None,
         usage=SimpleNamespace(input_tokens=80, output_tokens=10),
     )
 
@@ -301,7 +304,6 @@ def test_execute_copilot_accepts_source_from_search_tool(monkeypatch) -> None:
     tool_use = SimpleNamespace(
         stop_reason="tool_use",
         content=[search_block],
-        parsed_output=None,
         usage=SimpleNamespace(input_tokens=80, output_tokens=10),
     )
 
@@ -317,3 +319,20 @@ def test_execute_copilot_accepts_source_from_search_tool(monkeypatch) -> None:
 
     assert [source.chunk_id for source in run.sources] == ["ex-p6-c1"]
     assert "ex-p6-c1" not in [chunk.chunk_id for chunk, _ in run.results]
+
+
+def test_execute_copilot_fails_without_submit_answer(monkeypatch) -> None:
+    """
+    Claude が submit_answer を呼ばずに文章だけで終えたら、エラーにする。
+    """
+
+    text_only = SimpleNamespace(
+        stop_reason="end_turn",
+        content=[SimpleNamespace(type="text", text="負債合計は4,852,951百万円です。")],
+        usage=SimpleNamespace(input_tokens=100, output_tokens=20),
+    )
+
+    setup_fakes(monkeypatch, [text_only])
+
+    with pytest.raises(RuntimeError, match="submit_answer"):
+        execute_copilot("負債合計は？")

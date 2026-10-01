@@ -51,7 +51,7 @@ class ResearchSource(BaseModel):
 
 class CopilotAnswer(BaseModel):
     """
-    Claude に返させる構造化出力。
+    Claude の回答。submit_answer ツールの入力をこの型で検証する。
     """
 
     answer: str

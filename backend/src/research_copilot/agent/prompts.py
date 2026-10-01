@@ -4,6 +4,8 @@ Claude に渡す文章（システムプロンプトとユーザーメッセー�
 ここの文言を変えると回答が変わるので、変えたら評価を実行し直して結果を比べる。
 """
 
+from anthropic.types import ToolParam
+
 from ..retrieval.models import Chunk
 
 SYSTEM_PROMPT = """
@@ -47,7 +49,43 @@ Rules:
 11. Do not provide investment advice,
     trade recommendations, or definitive
     stock-price predictions.
+
+12. When you are ready to answer, call submit_answer
+    exactly once. Do not answer in plain text.
 """
+
+# Claude に回答を返させるためのツール。Python では実行せず、入力をそのまま回答として受け取る。
+# output_format（構造化出力）とツールを一緒に使うと、最初にダミーのツール呼び出しが入るため、
+# 回答もツール呼び出しで受け取る。
+SUBMIT_ANSWER_TOOL: ToolParam = {
+    "name": "submit_answer",
+    "description": (
+        "Submit the final answer to the user's question. "
+        "Call this exactly once, when you are ready to answer. "
+        "This tool is read-only."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "answer": {
+                "type": "string",
+                "description": "The answer in Japanese.",
+            },
+            "is_answerable": {
+                "type": "boolean",
+                "description": "False if the evidence is insufficient.",
+            },
+            "source_chunk_ids": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "CHUNK_IDs used as evidence.",
+            },
+        },
+        "required": ["answer", "is_answerable", "source_chunk_ids"],
+        "additionalProperties": False,
+    },
+    "strict": True,
+}
 
 STREAMING_SYSTEM_PROMPT = (
     "You are an investment research assistant. "

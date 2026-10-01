@@ -15,7 +15,7 @@ from ..retrieval.search import search
 from ..tools.registry import TOOLS, run_tool
 from ..tools.search_tool import SearchFilingResult
 from .models import CopilotAnswer, CopilotRun, ResearchSource, ToolCall
-from .prompts import SYSTEM_PROMPT, build_user_message
+from .prompts import SUBMIT_ANSWER_TOOL, SYSTEM_PROMPT, build_user_message
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ def execute_copilot(
         1. 質問に近いチャンクを検索する
         2. 検索結果を CONTEXT として Claude に渡す
         3. Claude が tool_use を返したら Python でツールを実行し、結果を渡してもう一度呼ぶ
-        4. Claude の構造化された回答（CopilotAnswer）を受け取る
+        4. Claude が submit_answer ツールで返した回答（CopilotAnswer）を受け取る
         5. 回答が挙げた出典を、実際の検索結果と照合する
 
     API と評価の両方から呼ばれるため、HTTP のことは扱わない。
@@ -83,17 +83,16 @@ def execute_copilot(
     # ==================================
 
     for _ in range(max_tool_rounds + 1):
-        response = client.messages.parse(
+        response = client.messages.create(
             model=model,
             max_tokens=1500,
             system=SYSTEM_PROMPT,
-            tools=TOOLS,
+            tools=[*TOOLS, SUBMIT_ANSWER_TOOL],
             tool_choice={
                 "type": "auto",
                 "disable_parallel_tool_use": True,
             },
             messages=messages,
-            output_format=CopilotAnswer,
         )
 
         input_tokens += response.usage.input_tokens
@@ -104,6 +103,32 @@ def execute_copilot(
         # ==============================
 
         if response.stop_reason == "tool_use":
+            # disable_parallel_tool_use なので、submit_answer が来たらそれが最後の応答になる。
+            submitted = next(
+                (
+                    block
+                    for block in response.content
+                    if block.type == "tool_use"
+                    and block.name == SUBMIT_ANSWER_TOOL["name"]
+                ),
+                None,
+            )
+
+            if submitted is not None:
+                answer = CopilotAnswer.model_validate(submitted.input)
+
+                return CopilotRun(
+                    answer=answer,
+                    results=results,
+                    sources=validate_sources(answer, evidence),
+                    tools_used=tools_used,
+                    tool_calls=tool_calls,
+                    retrieval_ms=retrieval_ms,
+                    total_ms=(perf_counter() - started) * 1000,
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
+                )
+
             messages.append(
                 {
                     "role": "assistant",
@@ -148,25 +173,10 @@ def execute_copilot(
             continue
 
         # ==============================
-        # 最終回答（構造化出力）
+        # submit_answer を呼ばずに終わった場合
         # ==============================
 
-        answer = response.parsed_output
-
-        if answer is None:
-            raise RuntimeError("Claude returned no parsed CopilotAnswer.")
-
-        return CopilotRun(
-            answer=answer,
-            results=results,
-            sources=validate_sources(answer, evidence),
-            tools_used=tools_used,
-            tool_calls=tool_calls,
-            retrieval_ms=retrieval_ms,
-            total_ms=(perf_counter() - started) * 1000,
-            input_tokens=input_tokens,
-            output_tokens=output_tokens,
-        )
+        raise RuntimeError("Claude finished without calling submit_answer.")
 
     raise RuntimeError("Maximum tool rounds exceeded.")
 
