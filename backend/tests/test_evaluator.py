@@ -110,7 +110,7 @@ def test_score_missing_expected_tool() -> None:
         evidence_page=7,
         required_terms=["44.5"],
         category="calculation",
-        expected_tool="calculate_financial_metrics",
+        expected_tool="calculate_growth_rate",
     )
 
     result = score_case(case, make_run("約44.5%です。", True, ["ex-p7-c0"]))
@@ -186,13 +186,13 @@ def test_failed_unneeded_tool_call_is_still_wrong() -> None:
         "答え",
         False,
         [],
-        tool_calls=[call("calculate_financial_metrics", False)],
+        tool_calls=[call("calculate_growth_rate", False)],
     )
 
     result = score_case(make_case(expected_tool=None), run)
 
     assert result.tools_used == []
-    assert result.tools_attempted == ["calculate_financial_metrics"]
+    assert result.tools_attempted == ["calculate_growth_rate"]
     assert result.tool_correct is False
     assert result.tool_calls_failed == 1
 
@@ -218,9 +218,9 @@ def test_extra_tool_besides_expected_is_wrong() -> None:
         "答え",
         False,
         [],
-        tool_calls=[call("search_filing"), call("calculate_financial_metrics")],
+        tool_calls=[call("search_filing"), call("calculate_growth_rate")],
     )
 
-    case = make_case(expected_tool="calculate_financial_metrics")
+    case = make_case(expected_tool="calculate_growth_rate")
 
     assert score_case(case, run).tool_correct is False

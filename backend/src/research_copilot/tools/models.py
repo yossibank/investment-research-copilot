@@ -2,49 +2,43 @@
 財務計算ツールの入力と結果の型。
 """
 
-from typing import Self
-
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict
 
 
-class FinancialMetricsInput(BaseModel):
+class GrowthRateInput(BaseModel):
     """
-    財務計算ツールの入力。Claude が資料から読み取った数値が入り、ない値は None。
+    成長率ツールの入力。同じ項目（売上高同士、営業利益同士）の前期と当期の値。
     """
 
     # 定義にない項目が返ってきたら、黙って捨てずにエラーにする。
     model_config = ConfigDict(extra="forbid")
 
-    previous_revenue: float | None = None
-    current_revenue: float | None = None
-    previous_operating_income: float | None = None
-    current_operating_income: float | None = None
-
-    @model_validator(mode="after")
-    def require_computable_pair(self) -> Self:
-        """
-        指標を 1 つも計算できない入力（空の入力など）をエラーにする。
-        """
-
-        pairs = [
-            (self.previous_revenue, self.current_revenue),
-            (self.previous_operating_income, self.current_operating_income),
-            (self.previous_revenue, self.previous_operating_income),
-            (self.current_revenue, self.current_operating_income),
-        ]
-
-        if not any(a is not None and b is not None for a, b in pairs):
-            raise ValueError("No metric can be calculated from the given values.")
-
-        return self
+    previous: float
+    current: float
 
 
-class FinancialMetricsResult(BaseModel):
+class GrowthRateResult(BaseModel):
     """
-    財務計算ツールの結果。計算できなかった指標は None。
+    成長率ツールの結果。前期が 0 で計算できない時は None。
     """
 
-    revenue_growth_percent: float | None
-    operating_income_growth_percent: float | None
-    previous_operating_margin_percent: float | None
-    current_operating_margin_percent: float | None
+    growth_percent: float | None
+
+
+class OperatingMarginInput(BaseModel):
+    """
+    営業利益率ツールの入力。同じ期間の売上高と営業利益。
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    revenue: float
+    operating_income: float
+
+
+class OperatingMarginResult(BaseModel):
+    """
+    営業利益ツールの結果。売上高が 0 で計算できない時は None。
+    """
+
+    operating_margin_percent: float | None

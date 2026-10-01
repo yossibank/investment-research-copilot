@@ -42,7 +42,7 @@ def test_copilot_endpoint(monkeypatch) -> None:
                 )
             ],
             tools_used=[
-                "calculate_financial_metrics",
+                "calculate_growth_rate",
             ],
         )
 
@@ -65,7 +65,7 @@ def test_copilot_endpoint(monkeypatch) -> None:
 
     assert body["is_answerable"] is True
 
-    assert "calculate_financial_metrics" in body["tools_used"]
+    assert "calculate_growth_rate" in body["tools_used"]
 
     assert body["sources"][0]["page"] == 4
 

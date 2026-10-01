@@ -11,47 +11,67 @@ from anthropic.types import ToolParam
 from pydantic import BaseModel, ValidationError
 
 from .filings_tool import ListFilingsInput, list_available_filings
-from .financial_tool import calculate_financial_metrics
-from .models import FinancialMetricsInput
+from .financial_tool import calculate_growth_rate, calculate_operating_margin
+from .models import GrowthRateInput, OperatingMarginInput
 from .search_tool import SearchFilingInput, search_filing
 
 TOOLS: list[ToolParam] = [
     {
-        "name": "calculate_financial_metrics",
+        "name": "calculate_growth_rate",
         "description": (
-            "Calculate revenue growth, operating income growth, "
-            "and operating margin with exact arithmetic. "
-            "Call this ONLY when the question asks for one of these metrics "
-            "and the metric itself is not already stated in CONTEXT. "
+            "Calculate a growth rate (%) from a previous-period value and "
+            "a current-period value of the same item, with exact arithmetic. "
+            "Call this ONLY when the question asks for a growth rate "
+            "and the rate itself is not already stated in CONTEXT. "
             "Do not call it to look up or confirm a value that can be read "
             "directly from CONTEXT. "
-            "Pass revenue and operating income values only, never other items "
-            "such as inventory, cash, or assets. "
-            "Pass at least two values taken from CONTEXT or the user. "
+            "Both values must be taken from CONTEXT or the user. "
             "This tool is read-only."
         ),
         "input_schema": {
             "type": "object",
             "properties": {
-                "previous_revenue": {
+                "previous": {
                     "type": "number",
-                    "description": "Revenue for the previous period.",
+                    "description": "Value for the previous period.",
                 },
-                "current_revenue": {
+                "current": {
                     "type": "number",
-                    "description": "Revenue for the current period.",
-                },
-                "previous_operating_income": {
-                    "type": "number",
-                    "description": "Operating income for the previous period.",
-                },
-                "current_operating_income": {
-                    "type": "number",
-                    "description": "Operating income for the current period.",
+                    "description": "Value for the current period.",
                 },
             },
+            "required": ["previous", "current"],
             "additionalProperties": False,
         },
+        # 定義通りの入力を API に保証させる。空の入力 {} では呼べなくなる。
+        "strict": True,
+    },
+    {
+        "name": "calculate_operating_margin",
+        "description": (
+            "Calculate the operating margin (%) from revenue and operating "
+            "income of the same period, with exact arithmetic. "
+            "Call this ONLY when the question asks for an operating margin "
+            "and the margin itself is not already stated in CONTEXT. "
+            "Both values must be taken from CONTEXT or the user. "
+            "This tool is read-only."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "revenue": {
+                    "type": "number",
+                    "description": "Revenue for the period.",
+                },
+                "operating_income": {
+                    "type": "number",
+                    "description": "Operating income for the same period.",
+                },
+            },
+            "required": ["revenue", "operating_income"],
+            "additionalProperties": False,
+        },
+        "strict": True,
     },
     {
         "name": "search_filing",
@@ -107,9 +127,13 @@ class ToolHandler:
 
 # 許可リスト。ここにはないツール名は、Claude が要求しても実行しない。
 TOOL_HANDLERS: dict[str, ToolHandler] = {
-    "calculate_financial_metrics": ToolHandler(
-        input_model=FinancialMetricsInput,
-        run=calculate_financial_metrics,
+    "calculate_growth_rate": ToolHandler(
+        input_model=GrowthRateInput,
+        run=calculate_growth_rate,
+    ),
+    "calculate_operating_margin": ToolHandler(
+        input_model=OperatingMarginInput,
+        run=calculate_operating_margin,
     ),
     "search_filing": ToolHandler(
         input_model=SearchFilingInput,

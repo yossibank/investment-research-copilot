@@ -66,10 +66,10 @@ def tool_use_response():
     block = SimpleNamespace(
         type="tool_use",
         id="toolu_1",
-        name="calculate_financial_metrics",
+        name="calculate_growth_rate",
         input={
-            "previous_revenue": 100,
-            "current_revenue": 110,
+            "previous": 100,
+            "current": 110,
         },
     )
 
@@ -157,7 +157,7 @@ def test_execute_copilot_with_tool_sums_tokens(monkeypatch) -> None:
     run = execute_copilot("売上高成長率は？")
 
     assert fake.calls == 2
-    assert run.tools_used == ["calculate_financial_metrics"]
+    assert run.tools_used == ["calculate_growth_rate"]
     assert run.input_tokens == 180
     assert run.output_tokens == 30
 
@@ -171,8 +171,8 @@ def test_execute_copilot_tool_failure(monkeypatch) -> None:
     bad_block = SimpleNamespace(
         type="tool_use",
         id="toolu_1",
-        name="calculate_financial_metrics",
-        input={"previous_revenue": "invalid"},  # 数値でないので入力の検証で失敗する
+        name="calculate_growth_rate",
+        input={"previous": "invalid", "current": 100},  # 数値でないので入力の検証で失敗する
     )
 
     tool_use = SimpleNamespace(
@@ -244,7 +244,7 @@ def test_execute_copilot_records_failed_tool_call(monkeypatch) -> None:
     empty_block = SimpleNamespace(
         type="tool_use",
         id="toolu_1",
-        name="calculate_financial_metrics",
+        name="calculate_growth_rate",
         input={},
     )
 
@@ -271,7 +271,7 @@ def test_execute_copilot_records_failed_tool_call(monkeypatch) -> None:
     assert run.tools_used == []
 
     assert [(call.name, call.input, call.succeeded) for call in run.tool_calls] == [
-        ("calculate_financial_metrics", {}, False)
+        ("calculate_growth_rate", {}, False)
     ]
 
 

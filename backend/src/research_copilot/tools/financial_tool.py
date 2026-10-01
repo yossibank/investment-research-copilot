@@ -2,7 +2,12 @@
 財務指標（成長率・営業利益率）の計算。Claude が要求したときにツールとして実行される。
 """
 
-from .models import FinancialMetricsInput, FinancialMetricsResult
+from .models import (
+    GrowthRateInput,
+    GrowthRateResult,
+    OperatingMarginInput,
+    OperatingMarginResult,
+)
 
 
 def growth_rate(
@@ -45,63 +50,33 @@ def operating_margin(
     return operating_income / revenue * 100
 
 
-def calculate_financial_metrics(
-    tool_input: FinancialMetricsInput,
-) -> FinancialMetricsResult:
+def calculate_growth_rate(
+    tool_input: GrowthRateInput,
+) -> GrowthRateResult:
     """
-    Claude から渡された数値で、成長率と営業利益率を計算する。
+    Claude から渡された前期と当期の値で、成長率を計算する。
 
     LLM は計算を間違えることがあるため、計算は Python で行う。
-    入力がそろわない指標は None のままにする。
     """
 
-    revenue_growth = None
-
-    if (
-        tool_input.previous_revenue is not None
-        and tool_input.current_revenue is not None
-    ):
-        revenue_growth = growth_rate(
-            tool_input.previous_revenue,
-            tool_input.current_revenue,
+    return GrowthRateResult(
+        growth_percent=growth_rate(
+            tool_input.previous,
+            tool_input.current,
         )
+    )
 
-    operating_income_growth = None
 
-    if (
-        tool_input.previous_operating_income is not None
-        and tool_input.current_operating_income is not None
-    ):
-        operating_income_growth = growth_rate(
-            tool_input.previous_operating_income,
-            tool_input.current_operating_income,
+def calculate_operating_margin(
+    tool_input: OperatingMarginInput,
+) -> OperatingMarginResult:
+    """
+    Claude から渡された売上高と営業利益で、営業利益率を計算する。
+    """
+
+    return OperatingMarginResult(
+        operating_margin_percent=operating_margin(
+            tool_input.revenue,
+            tool_input.operating_income,
         )
-
-    previous_margin = None
-
-    if (
-        tool_input.previous_revenue is not None
-        and tool_input.previous_operating_income is not None
-    ):
-        previous_margin = operating_margin(
-            tool_input.previous_revenue,
-            tool_input.previous_operating_income,
-        )
-
-    current_margin = None
-
-    if (
-        tool_input.current_revenue is not None
-        and tool_input.current_operating_income is not None
-    ):
-        current_margin = operating_margin(
-            tool_input.current_revenue,
-            tool_input.current_operating_income,
-        )
-
-    return FinancialMetricsResult(
-        revenue_growth_percent=revenue_growth,
-        operating_income_growth_percent=operating_income_growth,
-        previous_operating_margin_percent=previous_margin,
-        current_operating_margin_percent=current_margin,
     )
