@@ -19,18 +19,26 @@ TOOLS: list[ToolParam] = [
     {
         "name": "calculate_growth_rate",
         "description": (
-            "Calculate a growth rate (%) from a previous-period value and "
-            "a current-period value of the same item, with exact arithmetic. "
-            "Call this ONLY when the question asks for a growth rate "
-            "and the rate itself is not already stated in CONTEXT. "
-            "Do not call it to look up or confirm a value that can be read "
-            "directly from CONTEXT. "
+            "Calculate the growth rate (%) of revenue or operating income "
+            "from a previous-period value and a current-period value, "
+            "with exact arithmetic. "
+            "Call this ONLY when the question asks for the growth rate of "
+            "revenue or operating income and the rate itself is not already "
+            "stated in CONTEXT. "
+            "Do not use it for other items such as gross profit, expenses, "
+            "assets, or cash flows, and do not add growth rates the question "
+            "did not ask for. "
             "Both values must be taken from CONTEXT or the user. "
             "This tool is read-only."
         ),
         "input_schema": {
             "type": "object",
             "properties": {
+                "item": {
+                    "type": "string",
+                    "enum": ["revenue", "operating_income"],
+                    "description": "Which item the two values are.",
+                },
                 "previous": {
                     "type": "number",
                     "description": "Value for the previous period.",
@@ -40,7 +48,7 @@ TOOLS: list[ToolParam] = [
                     "description": "Value for the current period.",
                 },
             },
-            "required": ["previous", "current"],
+            "required": ["item", "previous", "current"],
             "additionalProperties": False,
         },
         # 定義通りの入力を API に保証させる。空の入力 {} では呼べなくなる。
@@ -97,6 +105,8 @@ TOOLS: list[ToolParam] = [
             "required": ["query"],
             "additionalProperties": False,
         },
+        # 空の入力 {} で呼ばれていたため、計算ツールと同じく定義通りの入力を保証させる。
+        "strict": True,
     },
     {
         "name": "list_available_filings",

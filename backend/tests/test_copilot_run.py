@@ -68,6 +68,7 @@ def tool_use_response():
         id="toolu_1",
         name="calculate_growth_rate",
         input={
+            "item": "revenue",
             "previous": 100,
             "current": 110,
         },
@@ -172,7 +173,7 @@ def test_execute_copilot_tool_failure(monkeypatch) -> None:
         type="tool_use",
         id="toolu_1",
         name="calculate_growth_rate",
-        input={"previous": "invalid", "current": 100},  # 数値でないので入力の検証で失敗する
+        input={"item": "revenue", "previous": "invalid", "current": 100},  # 数値でないので入力の検証で失敗する
     )
 
     tool_use = SimpleNamespace(

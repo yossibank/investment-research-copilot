@@ -2,17 +2,20 @@
 財務計算ツールの入力と結果の型。
 """
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict
 
 
 class GrowthRateInput(BaseModel):
     """
-    成長率ツールの入力。同じ項目（売上高同士、営業利益同士）の前期と当期の値。
+    成長率ツールの入力。売上高または営業利益の、前期と当期の値。
     """
 
     # 定義にない項目が返ってきたら、黙って捨てずにエラーにする。
     model_config = ConfigDict(extra="forbid")
 
+    item: Literal["revenue", "operating_income"]
     previous: float
     current: float
 

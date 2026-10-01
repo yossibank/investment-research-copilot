@@ -13,6 +13,7 @@ from research_copilot.tools.models import GrowthRateInput, OperatingMarginInput
 def test_calculate_growth_rate() -> None:
     result = calculate_growth_rate(
         GrowthRateInput(
+            item="revenue",
             previous=1000,
             current=1100,
         )
@@ -24,6 +25,7 @@ def test_calculate_growth_rate() -> None:
 def test_growth_rate_with_zero_previous_is_none() -> None:
     result = calculate_growth_rate(
         GrowthRateInput(
+            item="revenue",
             previous=0,
             current=100,
         )

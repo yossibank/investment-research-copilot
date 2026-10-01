@@ -24,9 +24,10 @@ def test_unexpected_tool_input_field_is_rejected() -> None:
         execute_tool(
             name="calculate_growth_rate",
             tool_input={
+                "item": "revenue",
                 "previous": 1066123,
                 "current": 1179799,
-                "item": "inventory",
+                "note": "inventory",
             },
         )
 
@@ -35,7 +36,7 @@ def test_growth_rate_is_calculated_by_code() -> None:
     result = json.loads(
         execute_tool(
             name="calculate_growth_rate",
-            tool_input={"previous": 208922, "current": 301921},
+            tool_input={"item": "revenue", "previous": 208922, "current": 301921},
         )
     )
 
@@ -60,7 +61,7 @@ def test_invalid_tool_input() -> None:
     ):
         execute_tool(
             name="calculate_growth_rate",
-            tool_input={"previous": "invalid", "current": 100},
+            tool_input={"item": "revenue", "previous": "invalid", "current": 100},
         )
 
 
@@ -77,6 +78,18 @@ def test_single_value_tool_input_is_rejected() -> None:
         execute_tool(
             name="calculate_growth_rate",
             tool_input={"current": 201894},
+        )
+
+
+def test_growth_rate_rejects_other_items() -> None:
+    """
+    売上高と営業利益以外（売上総利益など）の成長率は計算しない。
+    """
+
+    with pytest.raises(ValueError, match="Invalid input for tool"):
+        execute_tool(
+            name="calculate_growth_rate",
+            tool_input={"item": "gross_profit", "previous": 603751, "current": 665899},
         )
 
 
