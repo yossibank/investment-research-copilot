@@ -4,6 +4,8 @@
 
 from pydantic import BaseModel, Field
 
+from ..agent.models import ToolCall
+
 
 class GoldenCase(BaseModel):
     """
@@ -42,6 +44,8 @@ class EvalResult(BaseModel):
     tools_used: list[str] = Field(default_factory=list)
     tools_attempted: list[str] = Field(default_factory=list)
     tool_calls_failed: int = 0
+    # Claude がツールに渡した入力。検索語や計算に使った数字を、API を呼び直さずに調べるため。
+    tool_calls: list[ToolCall] = Field(default_factory=list)
     retrieved_chunk_ids: list[str] = Field(default_factory=list)
     source_chunk_ids: list[str] = Field(default_factory=list)
     expected_evidence_id: str | None

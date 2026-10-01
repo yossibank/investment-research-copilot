@@ -101,6 +101,7 @@ def score_case(case: GoldenCase, run: CopilotRun) -> EvalResult:
         tools_used=run.tools_used,
         tools_attempted=tools_attempted,
         tool_calls_failed=sum(not call.succeeded for call in run.tool_calls),
+        tool_calls=run.tool_calls,
         retrieved_chunk_ids=retrieved_ids,
         source_chunk_ids=source_ids,
         expected_evidence_id=case.evidence_id,
