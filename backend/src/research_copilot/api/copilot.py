@@ -24,7 +24,6 @@ def run_copilot_query(
     question: str,
     top_k: int = 5,
     request_id: str | None = None,
-    max_tool_rounds: int = 3,
 ) -> CopilotQueryResponse:
     """
     API 用の入口。実行は execute_copilot に任せ、API 用の形へ変換するだけ。
@@ -34,7 +33,6 @@ def run_copilot_query(
         question=question,
         top_k=top_k,
         request_id=request_id,
-        max_tool_rounds=max_tool_rounds,
     )
 
     return to_api_response(run)

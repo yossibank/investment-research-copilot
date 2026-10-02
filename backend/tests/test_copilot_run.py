@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 import pytest
 from research_copilot.agent import orchestrator
-from research_copilot.agent.models import CopilotAnswer
+from research_copilot.agent.models import AgentLimits, AgentStopped, CopilotAnswer
 from research_copilot.agent.orchestrator import execute_copilot, validate_sources
 from research_copilot.retrieval.models import Chunk
 
@@ -167,6 +167,7 @@ def test_execute_copilot_with_tool_sums_tokens(monkeypatch) -> None:
     assert run.tools_used == ["calculate_growth_rate"]
     assert run.input_tokens == 180
     assert run.output_tokens == 30
+    assert "growth_percent" in (run.tool_calls[0].result or "")
 
 
 def test_execute_copilot_tool_failure(monkeypatch) -> None:
@@ -179,7 +180,11 @@ def test_execute_copilot_tool_failure(monkeypatch) -> None:
         type="tool_use",
         id="toolu_1",
         name="calculate_growth_rate",
-        input={"item": "revenue", "previous": "invalid", "current": 100},  # 数値でないので入力の検証で失敗する
+        input={
+            "item": "revenue",
+            "previous": "invalid",
+            "current": 100,
+        },  # 数値でないので入力の検証で失敗する
     )
 
     tool_use = SimpleNamespace(
@@ -336,3 +341,94 @@ def test_execute_copilot_fails_without_submit_answer(monkeypatch) -> None:
 
     with pytest.raises(RuntimeError, match="submit_answer"):
         execute_copilot("負債合計は？")
+
+
+def growth_call(previous: int):
+    """
+    previous だけを変えた計算ツールの呼び出し。同じ値なら同じ呼び出しになる。
+    """
+
+    block = SimpleNamespace(
+        type="tool_use",
+        id=f"toolu_{previous}",
+        name="calculate_growth_rate",
+        input={
+            "item": "revenue",
+            "previous": previous,
+            "current": 110,
+        },
+    )
+
+    return SimpleNamespace(
+        stop_reason="tool_use",
+        content=[block],
+        usage=SimpleNamespace(input_tokens=80, output_tokens=10),
+    )
+
+
+def test_execute_copilot_stops_at_max_steps(monkeypatch) -> None:
+    fake = setup_fakes(
+        monkeypatch,
+        [growth_call(100 + i) for i in range(5)],
+    )
+
+    with pytest.raises(AgentStopped) as stopped:
+        execute_copilot("売上高成長率は？")
+
+    assert stopped.value.reason == "max_steps"
+    assert fake.calls == 5
+    assert len(stopped.value.tool_calls) == 5
+
+
+def test_execute_copilot_stops_on_repeated_call(monkeypatch) -> None:
+    """
+    同じツールを同じ引数で続けて呼んだら、2 回目は実行せずに止める。
+    """
+
+    fake = setup_fakes(
+        monkeypatch,
+        [growth_call(100), growth_call(100)],
+    )
+
+    with pytest.raises(AgentStopped) as stopped:
+        execute_copilot("売上高成長率は？")
+
+    assert stopped.value.reason == "repeated_call"
+    assert fake.calls == 2
+    assert len(stopped.value.tool_calls) == 1
+
+
+def test_execute_copilot_stops_on_token_budget(monkeypatch) -> None:
+    """
+    1 回目で予算（50 トークン）を超えたら、2 回目の Claude を呼ばない。
+    """
+
+    fake = setup_fakes(
+        monkeypatch,
+        [growth_call(100), growth_call(101)],
+    )
+
+    with pytest.raises(AgentStopped) as stopped:
+        execute_copilot(
+            "売上高成長率は？",
+            limits=AgentLimits(max_total_tokens=50),
+        )
+
+    assert stopped.value.reason == "token_budget"
+    assert fake.calls == 1
+
+
+def test_execute_copilot_stops_on_timeout(monkeypatch) -> None:
+    fake = setup_fakes(
+        monkeypatch,
+        [growth_call(100)],
+    )
+
+    with pytest.raises(AgentStopped) as stopped:
+        execute_copilot(
+            "売上高成長率は？",
+            limits=AgentLimits(timeout_s=0),
+        )
+
+    assert stopped.value.reason == "timeout"
+    assert fake.calls == 0

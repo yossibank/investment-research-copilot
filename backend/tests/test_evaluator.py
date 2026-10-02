@@ -196,7 +196,12 @@ def test_failed_unneeded_tool_call_is_still_wrong() -> None:
     assert result.tool_correct is False
     assert result.tool_calls_failed == 1
     assert result.model_dump()["tool_calls"] == [
-        {"name": "calculate_growth_rate", "input": {}, "succeeded": False}
+        {
+            "name": "calculate_growth_rate",
+            "input": {},
+            "succeeded": False,
+            "result": None,
+        }
     ]
 
 

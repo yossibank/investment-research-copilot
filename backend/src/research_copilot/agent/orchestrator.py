@@ -5,6 +5,7 @@ Copilot の中心の処理（検索 → Claude → ツール実行 → 出典の
 import json
 import logging
 from time import perf_counter
+from typing import NoReturn
 
 from anthropic.types import MessageParam, ToolResultBlockParam, ToolUseBlock
 from pydantic import BaseModel
@@ -14,17 +15,28 @@ from ..retrieval.models import Chunk
 from ..retrieval.search import search
 from ..tools.registry import TOOLS, run_tool
 from ..tools.search_tool import SearchFilingResult
-from .models import CopilotAnswer, CopilotRun, ResearchSource, ToolCall
+from .models import (
+    AgentLimits,
+    AgentStopped,
+    CopilotAnswer,
+    CopilotRun,
+    ResearchSource,
+    StopReason,
+    ToolCall,
+)
 from .prompts import SUBMIT_ANSWER_TOOL, SYSTEM_PROMPT, build_user_message
 
 logger = logging.getLogger(__name__)
+
+
+DEFAULT_LIMITS = AgentLimits()
 
 
 def execute_copilot(
     question: str,
     top_k: int = 5,
     request_id: str | None = None,
-    max_tool_rounds: int = 3,
+    limits: AgentLimits = DEFAULT_LIMITS,
 ) -> CopilotRun:
     """
     質問に対して、検索 → Claude（必要ならツール実行）→ 出典の検証までを行う。
@@ -82,7 +94,13 @@ def execute_copilot(
     # 3. ツール呼び出しのループ
     # ==================================
 
-    for _ in range(max_tool_rounds + 1):
+    for _ in range(limits.max_steps):
+        if perf_counter() - started > limits.timeout_s:
+            _stop("timeout", tool_calls, request_id)
+
+        if input_tokens + output_tokens > limits.max_total_tokens:
+            _stop("token_budget", tool_calls, request_id)
+
         response = client.messages.create(
             model=model,
             max_tokens=1500,
@@ -142,15 +160,21 @@ def execute_copilot(
                 if block.type != "tool_use":
                     continue
 
+                if _is_repeated_call(block, tool_calls):
+                    _stop("repeated_call", tool_calls, request_id)
+
                 tool_result, output = _run_tool(block, request_id)
 
                 tool_results.append(tool_result)
+
+                content = tool_result.get("content")
 
                 tool_calls.append(
                     ToolCall(
                         name=block.name,
                         input=dict(block.input),
                         succeeded=output is not None,
+                        result=content if isinstance(content, str) else None,
                     )
                 )
 
@@ -178,7 +202,45 @@ def execute_copilot(
 
         raise RuntimeError("Claude finished without calling submit_answer.")
 
-    raise RuntimeError("Maximum tool rounds exceeded.")
+    raise _stop("max_steps", tool_calls, request_id)
+
+
+def _is_repeated_call(
+    block: ToolUseBlock,
+    tool_calls: list[ToolCall],
+) -> bool:
+    """
+    直前と同じツールを、同じ引数で呼んでいるかを返す。
+    """
+
+    if not tool_calls:
+        return False
+
+    last = tool_calls[-1]
+
+    return last.name == block.name and last.input == dict(block.input)
+
+
+def _stop(
+    reason: StopReason,
+    tool_calls: list[ToolCall],
+    request_id: str | None = None,
+) -> NoReturn:
+    """
+    上限に届いたことをログに残し、AgentStopped を投げる。
+    """
+
+    logger.warning(
+        "copilot agent stopped",
+        extra={
+            "event": "agent_stopped",
+            "request_id": request_id,
+            "stop_reason": reason,
+            "tool_calls": len(tool_calls),
+        },
+    )
+
+    raise AgentStopped(reason, tool_calls)
 
 
 def _run_tool(
