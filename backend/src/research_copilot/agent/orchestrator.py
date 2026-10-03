@@ -4,8 +4,9 @@ Copilot の中心の処理（検索 → Claude → ツール実行 → 出典の
 
 import json
 import logging
+from pathlib import Path
 from time import perf_counter
-from typing import NoReturn
+from typing import NoReturn, cast
 
 from anthropic.types import MessageParam, ToolResultBlockParam, ToolUseBlock
 from pydantic import BaseModel
@@ -14,7 +15,7 @@ from ..llm import create_client, get_model
 from ..retrieval.models import Chunk
 from ..retrieval.search import search
 from ..tools.registry import TOOLS, run_tool
-from ..tools.search_tool import SearchFilingResult
+from ..tools.search_tool import SearchFilingResult, SearchHit
 from .models import (
     AgentLimits,
     AgentStopped,
@@ -25,6 +26,7 @@ from .models import (
     ToolCall,
 )
 from .prompts import SUBMIT_ANSWER_TOOL, SYSTEM_PROMPT, build_user_message
+from .state import ConversationState, ResearchTaskState, TaskMetrics, TaskSnapshot
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +39,7 @@ def execute_copilot(
     top_k: int = 5,
     request_id: str | None = None,
     limits: AgentLimits = DEFAULT_LIMITS,
+    snapshot_path: Path | None = None,
 ) -> CopilotRun:
     """
     質問に対して、検索 → Claude（必要ならツール実行）→ 出典の検証までを行う。
@@ -50,16 +53,48 @@ def execute_copilot(
 
     API と評価の両方から呼ばれるため、HTTP のことは扱わない。
     戻り値の CopilotRun には、評価で使うレイテンシやトークン数も含まれる。
+    snapshot_path を渡すと、1 step ごとに途中の状態を JSON に保存する。
+    """
+
+    snapshot = start_task(question, top_k)
+
+    return run_task(
+        snapshot,
+        request_id,
+        limits,
+        snapshot_path,
+    )
+
+
+def resume_copilot(
+    snapshot_path: Path,
+    request_id: str | None = None,
+    limits: AgentLimits = DEFAULT_LIMITS,
+) -> CopilotRun:
+    """
+    保存した途中の状態を読み戻し、残りの step を続ける。
+    """
+
+    snapshot = TaskSnapshot.load(snapshot_path)
+
+    if snapshot.task.status != "running":
+        raise ValueError(f"Task is already {snapshot.task.status}.")
+
+    return run_task(
+        snapshot,
+        request_id,
+        limits,
+        snapshot_path,
+    )
+
+
+def start_task(question: str, top_k: int) -> TaskSnapshot:
+    """
+    質問に近いチャンクを検索し、Claude に送る最初のメッセージまでを作る。
     """
 
     if not question.strip():
         raise ValueError("Question must not be empty.")
-
-    model = get_model()
-
-    # ==================================
-    # 1. 検索
-    # ==================================
 
     started = perf_counter()
 
@@ -67,39 +102,58 @@ def execute_copilot(
 
     retrieval_ms = (perf_counter() - started) * 1000
 
-    # ==================================
-    # 2. Claude に渡すメッセージ
-    # ==================================
+    hits = [SearchHit(chunk=chunk, score=score) for chunk, score in results]
 
-    messages: list[MessageParam] = [
-        {
-            "role": "user",
-            "content": build_user_message(question, results),
-        }
-    ]
+    task = ResearchTaskState(
+        question=question,
+        top_k=top_k,
+        results=hits,
+        evidence=list(hits),
+        metrics=TaskMetrics(
+            retrieval_ms=retrieval_ms,
+            elapsed_ms=retrieval_ms,
+        ),
+    )
 
+    conversation = ConversationState(
+        messages=[
+            {
+                "role": "user",
+                "content": build_user_message(question, results),
+            }
+        ]
+    )
+
+    return TaskSnapshot(task=task, conversation=conversation)
+
+
+def run_task(
+    snapshot: TaskSnapshot,
+    request_id: str | None,
+    limits: AgentLimits,
+    snapshot_path: Path | None = None,
+) -> CopilotRun:
+    """
+    Claude とツールのやりとりを、submit_answer で答えるか上限に届くまで続ける。
+
+    状態はすべて snapshot に書き込むので、途中で止まっても保存したところから再開できる。
+    """
+
+    task = snapshot.task
+    conversation = snapshot.conversation
+    metrics = task.metrics
+
+    model = get_model()
     client = create_client()
 
-    tools_used: list[str] = []
+    while metrics.steps < limits.max_steps:
+        if metrics.elapsed_ms >= limits.timeout_s * 1000:
+            _stop("timeout", snapshot, snapshot_path, request_id)
 
-    tool_calls: list[ToolCall] = []
+        if metrics.input_tokens + metrics.output_tokens >= limits.max_total_tokens:
+            _stop("token_budget", snapshot, snapshot_path, request_id)
 
-    # 出典として認めるチャンク。最初の検索結果に、追加検索で見つけたものを足していく。
-    evidence: list[tuple[Chunk, float]] = list(results)
-
-    input_tokens = 0
-    output_tokens = 0
-
-    # ==================================
-    # 3. ツール呼び出しのループ
-    # ==================================
-
-    for _ in range(limits.max_steps):
-        if perf_counter() - started > limits.timeout_s:
-            _stop("timeout", tool_calls, request_id)
-
-        if input_tokens + output_tokens > limits.max_total_tokens:
-            _stop("token_budget", tool_calls, request_id)
+        step_started = perf_counter()
 
         response = client.messages.create(
             model=model,
@@ -110,99 +164,91 @@ def execute_copilot(
                 "type": "auto",
                 "disable_parallel_tool_use": True,
             },
-            messages=messages,
+            # 保存できるように辞書で持っているが、中身は Claude に送れる形のまま。
+            messages=cast(list[MessageParam], conversation.messages),
         )
 
-        input_tokens += response.usage.input_tokens
-        output_tokens += response.usage.output_tokens
+        metrics.steps += 1
+        metrics.input_tokens += response.usage.input_tokens
+        metrics.output_tokens += response.usage.output_tokens
 
-        # ==============================
-        # Claude がツールを要求した場合
-        # ==============================
+        if response.stop_reason != "tool_use":
+            raise RuntimeError("Claude finished without calling submit_answer.")
 
-        if response.stop_reason == "tool_use":
-            # disable_parallel_tool_use なので、submit_answer が来たらそれが最後の応答になる。
-            submitted = next(
-                (
-                    block
-                    for block in response.content
-                    if block.type == "tool_use"
-                    and block.name == SUBMIT_ANSWER_TOOL["name"]
-                ),
-                None,
-            )
+        submitted = next(
+            (
+                block
+                for block in response.content
+                if block.type == "tool_use" and block.name == SUBMIT_ANSWER_TOOL["name"]
+            ),
+            None,
+        )
 
-            if submitted is not None:
-                answer = CopilotAnswer.model_validate(submitted.input)
+        if submitted is not None:
+            answer = CopilotAnswer.model_validate(submitted.input)
 
-                return CopilotRun(
-                    answer=answer,
-                    results=results,
-                    sources=validate_sources(answer, evidence),
-                    tools_used=tools_used,
-                    tool_calls=tool_calls,
-                    retrieval_ms=retrieval_ms,
-                    total_ms=(perf_counter() - started) * 1000,
-                    input_tokens=input_tokens,
-                    output_tokens=output_tokens,
+            task.answer = answer
+            task.status = "answered"
+            metrics.elapsed_ms += (perf_counter() - step_started) * 1000
+            _save(snapshot, snapshot_path)
+
+            return _to_run(task, answer)
+
+        conversation.messages.append(
+            {
+                "role": "assistant",
+                "content": [
+                    block.model_dump(exclude_none=True) for block in response.content
+                ],
+            }
+        )
+
+        tool_results: list[ToolResultBlockParam] = []
+
+        for block in response.content:
+            if block.type != "tool_use":
+                continue
+
+            if _is_repeated_call(block, task.tool_history):
+                _stop("repeated_call", snapshot, snapshot_path, request_id)
+
+            tool_result, output = _run_tool(block, request_id)
+
+            tool_results.append(tool_result)
+
+            content = tool_result.get("content")
+
+            task.tool_history.append(
+                ToolCall(
+                    name=block.name,
+                    input=dict(block.input),
+                    succeeded=output is not None,
+                    result=content if isinstance(content, str) else None,
                 )
-
-            messages.append(
-                {
-                    "role": "assistant",
-                    "content": response.content,
-                }
             )
 
-            tool_results: list[ToolResultBlockParam] = []
+            if output is None:
+                continue
 
-            for block in response.content:
-                if block.type != "tool_use":
-                    continue
+            if block.name not in task.tools_used:
+                task.tools_used.append(block.name)
 
-                if _is_repeated_call(block, tool_calls):
-                    _stop("repeated_call", tool_calls, request_id)
+            if isinstance(output, SearchFilingResult):
+                task.evidence.extend(output.hits)
 
-                tool_result, output = _run_tool(block, request_id)
+        conversation.messages.append(
+            {
+                "role": "user",
+                "content": tool_results,
+            }
+        )
 
-                tool_results.append(tool_result)
+        metrics.elapsed_ms += (perf_counter() - step_started) * 1000
 
-                content = tool_result.get("content")
+        # 1 step ごとに保存する。ここで落ちても、次はこの step の続きから始められる。
+        _save(snapshot, snapshot_path)
 
-                tool_calls.append(
-                    ToolCall(
-                        name=block.name,
-                        input=dict(block.input),
-                        succeeded=output is not None,
-                        result=content if isinstance(content, str) else None,
-                    )
-                )
-
-                if output is None:
-                    continue
-
-                if block.name not in tools_used:
-                    tools_used.append(block.name)
-
-                if isinstance(output, SearchFilingResult):
-                    evidence.extend((hit.chunk, hit.score) for hit in output.hits)
-
-            messages.append(
-                {
-                    "role": "user",
-                    "content": tool_results,
-                }
-            )
-
-            continue
-
-        # ==============================
-        # submit_answer を呼ばずに終わった場合
-        # ==============================
-
-        raise RuntimeError("Claude finished without calling submit_answer.")
-
-    raise _stop("max_steps", tool_calls, request_id)
+    _stop("max_steps", snapshot, snapshot_path, request_id)
 
 
 def _is_repeated_call(
@@ -221,14 +267,32 @@ def _is_repeated_call(
     return last.name == block.name and last.input == dict(block.input)
 
 
+def _save(
+    snapshot: TaskSnapshot,
+    snapshot_path: Path | None = None,
+) -> None:
+    """
+    保存先が指定されていれば、今の状態を JSON に書き出す。
+    """
+
+    if snapshot_path is not None:
+        snapshot.save(snapshot_path)
+
+
 def _stop(
     reason: StopReason,
-    tool_calls: list[ToolCall],
-    request_id: str | None = None,
+    snapshot: TaskSnapshot,
+    snapshot_path: Path | None,
+    request_id: str | None,
 ) -> NoReturn:
     """
     上限に届いたことをログに残し、AgentStopped を投げる。
     """
+
+    task = snapshot.task
+    task.status = "stopped"
+    task.stop_reason = reason
+    _save(snapshot, snapshot_path)
 
     logger.warning(
         "copilot agent stopped",
@@ -236,11 +300,35 @@ def _stop(
             "event": "agent_stopped",
             "request_id": request_id,
             "stop_reason": reason,
-            "tool_calls": len(tool_calls),
+            "tool_calls": len(task.tool_history),
         },
     )
 
-    raise AgentStopped(reason, tool_calls)
+    raise AgentStopped(reason, task.tool_history)
+
+
+def _to_run(
+    task: ResearchTaskState,
+    answer: CopilotAnswer,
+) -> CopilotRun:
+    """
+    答えの出た task を、API と評価が使う CopilotRun に変換する。
+    """
+
+    results = [(hit.chunk, hit.score) for hit in task.results]
+    evidence = [(hit.chunk, hit.score) for hit in task.evidence]
+
+    return CopilotRun(
+        answer=answer,
+        results=results,
+        sources=validate_sources(answer, evidence),
+        tools_used=task.tools_used,
+        tool_calls=task.tool_history,
+        retrieval_ms=task.metrics.retrieval_ms,
+        total_ms=task.metrics.elapsed_ms,
+        input_tokens=task.metrics.input_tokens,
+        output_tokens=task.metrics.output_tokens,
+    )
 
 
 def _run_tool(

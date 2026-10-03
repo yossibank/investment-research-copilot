@@ -5,9 +5,15 @@ execute_copilot のテスト。検索と Claude API を偽物に差し替える�
 from types import SimpleNamespace
 
 import pytest
+from anthropic.types import ToolUseBlock
 from research_copilot.agent import orchestrator
 from research_copilot.agent.models import AgentLimits, AgentStopped, CopilotAnswer
-from research_copilot.agent.orchestrator import execute_copilot, validate_sources
+from research_copilot.agent.orchestrator import (
+    execute_copilot,
+    resume_copilot,
+    validate_sources,
+)
+from research_copilot.agent.state import TaskSnapshot
 from research_copilot.retrieval.models import Chunk
 
 
@@ -52,7 +58,7 @@ class FakeMessages:
 def final_response(
     answer: CopilotAnswer, input_tokens: int = 100, output_tokens: int = 20
 ):
-    block = SimpleNamespace(
+    block = ToolUseBlock(
         type="tool_use",
         id="toolu_answer",
         name="submit_answer",
@@ -70,7 +76,7 @@ def final_response(
 
 
 def tool_use_response():
-    block = SimpleNamespace(
+    block = ToolUseBlock(
         type="tool_use",
         id="toolu_1",
         name="calculate_growth_rate",
@@ -176,7 +182,7 @@ def test_execute_copilot_tool_failure(monkeypatch) -> None:
     失敗したツールは tools_used に入れない。
     """
 
-    bad_block = SimpleNamespace(
+    bad_block = ToolUseBlock(
         type="tool_use",
         id="toolu_1",
         name="calculate_growth_rate",
@@ -214,7 +220,7 @@ def test_execute_copilot_rejects_tool_outside_allowlist(monkeypatch) -> None:
     許可リストにないツールは実行せず、is_error の tool_result を Claude に返す。
     """
 
-    unknown_block = SimpleNamespace(
+    unknown_block = ToolUseBlock(
         type="tool_use",
         id="toolu_1",
         name="delete_database",
@@ -251,7 +257,7 @@ def test_execute_copilot_records_failed_tool_call(monkeypatch) -> None:
     失敗した呼び出しも、入力と一緒に tool_calls に残る（tools_used には入らない）。
     """
 
-    empty_block = SimpleNamespace(
+    empty_block = ToolUseBlock(
         type="tool_use",
         id="toolu_1",
         name="calculate_growth_rate",
@@ -299,7 +305,7 @@ def test_execute_copilot_accepts_source_from_search_tool(monkeypatch) -> None:
         lambda query, top_k: [(extra_chunk, 0.7)],
     )
 
-    search_block = SimpleNamespace(
+    search_block = ToolUseBlock(
         type="tool_use",
         id="toolu_1",
         name="search_filing",
@@ -348,7 +354,7 @@ def growth_call(previous: int):
     previous だけを変えた計算ツールの呼び出し。同じ値なら同じ呼び出しになる。
     """
 
-    block = SimpleNamespace(
+    block = ToolUseBlock(
         type="tool_use",
         id=f"toolu_{previous}",
         name="calculate_growth_rate",
@@ -432,3 +438,53 @@ def test_execute_copilot_stops_on_timeout(monkeypatch) -> None:
 
     assert stopped.value.reason == "timeout"
     assert fake.calls == 0
+
+
+def test_execute_copilot_resumes_from_snapshot(monkeypatch, tmp_path) -> None:
+    """
+    1 step 目のあとで落ちても、保存した JSON だけで続きから再開できる。
+    """
+
+    path = tmp_path / "task.json"
+
+    setup_fakes(monkeypatch, [growth_call(100)])
+
+    # 2 回目の呼び出しで応答が尽きて IndexError になる = プロセスが落ちた代わり
+    with pytest.raises(IndexError):
+        execute_copilot("売上高成長率は？", snapshot_path=path)
+
+    saved = TaskSnapshot.load(path)
+
+    assert saved.task.status == "running"
+    assert saved.task.metrics.steps == 1
+    assert len(saved.task.tool_history) == 1
+
+    answer = CopilotAnswer(
+        answer="売上高成長率は10.0%です。",
+        is_answerable=True,
+        source_chunk_ids=["ex-p7-c0"],
+    )
+
+    second = setup_fakes(monkeypatch, [final_response(answer)])
+
+    run = resume_copilot(path)
+
+    assert second.calls == 1  # 1 step 目はやり直していない
+    assert len(second.last_messages) == 3  # 質問・Claude のツール呼び出し・その結果
+    assert run.tools_used == ["calculate_growth_rate"]
+    assert run.input_tokens == 80 + 100
+    assert [source.chunk_id for source in run.sources] == ["ex-p7-c0"]
+    assert TaskSnapshot.load(path).task.status == "answered"
+
+
+def test_resume_copilot_rejects_finished_task(monkeypatch, tmp_path) -> None:
+    path = tmp_path / "task.json"
+
+    answer = CopilotAnswer(answer="答え", is_answerable=False)
+
+    setup_fakes(monkeypatch, [final_response(answer)])
+
+    execute_copilot("売上高は？", snapshot_path=path)
+
+    with pytest.raises(ValueError, match="already answered"):
+        resume_copilot(path)
