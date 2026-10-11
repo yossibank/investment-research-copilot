@@ -1,5 +1,6 @@
 import SwiftUI
 
+@MainActor
 struct ResearchView {
     @State private var viewModel = ResearchViewModel()
 }

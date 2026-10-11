@@ -2,6 +2,7 @@ import Playgrounds
 import SwiftUI
 
 @main
+@MainActor
 struct MyApp {}
 
 extension MyApp: App {
