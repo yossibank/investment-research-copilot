@@ -1,23 +1,8 @@
-<div align="center">
-
 # 📊 investment-research-copilot
 
 決算資料を根拠に答える、SwiftUI と Claude の AI リサーチアプリ
 
 [![License](https://img.shields.io/github/license/yossibank/investment-research-copilot)](LICENSE)
-
-![Swift](https://img.shields.io/badge/Swift-F05138?logo=swift&logoColor=white)
-![SwiftUI](https://img.shields.io/badge/SwiftUI-0D96F6?logo=swift&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
-![Pydantic](https://img.shields.io/badge/Pydantic-E92063?logo=pydantic&logoColor=white)
-![Claude](https://img.shields.io/badge/Claude_API-D97757?logo=claude&logoColor=white)
-![Sentence Transformers](https://img.shields.io/badge/Sentence_Transformers-FFD21E?logo=huggingface&logoColor=black)
-![pytest](https://img.shields.io/badge/pytest-0A9EDC?logo=pytest&logoColor=white)
-
-決算 PDF から根拠を検索 ・ 計算は Python のツール ・ 出典（ページ）付きで回答
-
-</div>
 
 決算 PDF について質問すると、関連する箇所を検索し、その箇所だけを根拠に回答と出典（ページ）を返す。成長率などの計算は LLM ではなく Python で行う。資料に根拠がない質問には答えない。
 
@@ -39,7 +24,7 @@ flowchart LR
     style LLM stroke-width:3px
 ```
 
-作るときに工夫した点は、次の 4 つである。
+作るときに工夫した点を、次の表に挙げる。
 
 | 工夫した点 | 内容 |
 | --- | --- |
