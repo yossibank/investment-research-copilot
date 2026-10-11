@@ -22,9 +22,11 @@ extension APIClient {
                     try validate(response)
 
                     for try await line in bytes.lines where !line.isEmpty {
+                        let data = Data(line.utf8)
+
                         let event = try decoder.decode(
                             ResearchStreamEvent.self,
-                            from: Data(line.utf8)
+                            from: data
                         )
 
                         continuation.yield(event)
@@ -78,12 +80,13 @@ private extension APIClient {
             throw APIError.invalidURL
         }
 
+        let body = ResearchQueryRequest(question: question, topK: topK)
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .convertToSnakeCase
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try encoder.encode(ResearchQueryRequest(question: question, topK: topK))
+        request.httpBody = try encoder.encode(body)
 
         return request
     }
