@@ -1,0 +1,8 @@
+repos:
+  - repo: local
+    hooks:
+      - id: swiftformat
+        name: SwiftFormat
+        entry: mint run swiftformat
+        language: system
+        types: [swift]

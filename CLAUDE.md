@@ -12,6 +12,7 @@
   - 比べる対象は、**変えた処理を実際に通るもの**にする。
 - 評価は Claude API を呼ぶので、`--limit 3` で確かめてから全件を実行する。比較の基準は `evaluation/results/mvp-baseline.json`。
 - プロンプトの文言は、リファクタリングのついでに変えない。変えたら評価を実行し直して比べる。
+- `ios/` を変えたら、README の「iOS アプリの確認と整形」のビルドと `mint run swiftformat --lint ios` を通す。
 
 ## コードの書き方
 

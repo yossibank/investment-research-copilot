@@ -1,0 +1,24 @@
+--swift-version 6.4
+
+--disable wrapMultilineStatementBraces
+--enable blankLinesAfterGuardStatements
+--enable blankLinesBetweenImports
+--enable wrapIfStatementBodies
+--enable wrapGuardStatementBodies
+--enable wrapIfExpressionBodies
+--enable wrapMultilineFunctionChains
+--enable organizeDeclarations
+
+--header strip
+--mark-categories false
+--max-width 100
+--organization-mode type
+--ranges no-space
+--redundant-type inferred
+--self init-only
+--strip-unused-args closure-only
+--test-case-name-format preserve
+--trailing-commas never
+--wrap-arguments before-first
+--wrap-collections before-first
+--wrap-parameters before-first

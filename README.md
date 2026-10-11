@@ -115,3 +115,17 @@ python -m research_copilot.evaluation.evaluator --limit 3
 
 > [!WARNING]
 > 評価は Claude API を呼ぶ。少ない件数で確かめてから全件を実行する。
+
+### iOS アプリの確認と整形
+
+Swift の整形は SwiftFormat で行い、版は `Mintfile` でそろえる。[Mint](https://github.com/yonaskolb/Mint) と [pre-commit](https://pre-commit.com/) を入れてから、次を実行する。
+
+```sh
+mint bootstrap && pre-commit install   # SwiftFormat を入れ、commit の前の整形を有効にする
+mint run swiftformat ios                # Swift を整形する
+xcodebuild -project ios/ResearchCopilot.xcodeproj -scheme ResearchCopilot \
+  -destination 'generic/platform=iOS Simulator' build
+```
+
+> [!NOTE]
+> commit の前に pre-commit が、ステージした Swift を整形する。直したファイルがあると commit は止まるので、`git add` して commit し直す。

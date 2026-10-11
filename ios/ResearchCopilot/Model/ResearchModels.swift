@@ -1,24 +1,30 @@
 import Foundation
 
-struct ResearchQueryRequest: Encodable {
+struct ResearchQueryRequest {
     let question: String
     let topK: Int
 }
 
-struct ResearchSource: Decodable, Identifiable {
+extension ResearchQueryRequest: Encodable {}
+
+struct ResearchSource {
     let chunkId: String
     let company: String
     let documentName: String
     let page: Int
     let score: Double
     let sourceUrl: String
+}
 
+extension ResearchSource: Decodable {}
+
+extension ResearchSource: Identifiable {
     var id: String {
         chunkId
     }
 }
 
-struct ResearchStreamEvent: Decodable {
+struct ResearchStreamEvent {
     let type: EventType
     let text: String?
     let requestId: String?
@@ -26,7 +32,9 @@ struct ResearchStreamEvent: Decodable {
     let latencyMs: Double?
     let message: String?
     let retrievedSources: [ResearchSource]?
+}
 
+extension ResearchStreamEvent {
     enum EventType: String, Decodable {
         case metadata
         case textDelta = "text_delta"
@@ -35,9 +43,13 @@ struct ResearchStreamEvent: Decodable {
     }
 }
 
-struct CopilotQueryResponse: Decodable {
+extension ResearchStreamEvent: Decodable {}
+
+struct CopilotQueryResponse {
     let answer: String
     let isAnswerable: Bool
     let sources: [ResearchSource]
     let toolsUsed: [String]
 }
+
+extension CopilotQueryResponse: Decodable {}
