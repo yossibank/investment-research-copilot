@@ -1,5 +1,7 @@
 # investment-research-copilot
 
+決算資料を根拠に答える、SwiftUI と Claude の AI リサーチアプリ。
+
 ## 作業の進め方
 
 - 変更したら `python -m pytest backend` を通す。
@@ -8,7 +10,7 @@
 - 評価は Claude API を呼ぶので、`--limit 3` で確かめてから全件を実行する。比較の基準は `evaluation/results/mvp-baseline.json`。
 - プロンプトの文言は、リファクタリングのついでに変えない。変えたら評価を実行し直して比べる。
 
-## コメント
+## コードの書き方
 
 - `__init__.py` 以外の `.py` の先頭に、モジュールの docstring を 1〜2 行書く。何が入っているかと、Claude API を呼ぶかどうかを書く。
 - `src` の関数とクラスには docstring を書く。1 行目は「何をするか」。型注釈で分かることは書かない。
