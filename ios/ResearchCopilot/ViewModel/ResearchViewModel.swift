@@ -5,17 +5,17 @@ import Foundation
 final class ResearchViewModel {
     var question = ""
     var answer = ""
-    var sources = [ResearchSource]()
+    var sources: [ResearchSource] = []
     var toolsUsed: [String] = []
     var isLoading = false
     var errorMessage: String?
 
     private let client = APIClient()
+}
 
+extension ResearchViewModel {
     func submit() async {
-        let trimmedQuestion = question.trimmingCharacters(
-            in: .whitespacesAndNewlines
-        )
+        let trimmedQuestion = question.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !trimmedQuestion.isEmpty else {
             return
@@ -31,26 +31,7 @@ final class ResearchViewModel {
         }
 
         do {
-//            let stream = client.researchStream(question: trimmedQuestion)
-//
-//            for try await event in stream {
-//                switch event.type {
-//                case .metadata:
-//                    sources = event.retrievedSources ?? []
-//
-//                case .textDelta:
-//                    answer += event.text ?? ""
-//
-//                case .done:
-//                    break
-//
-//                case .error:
-//                    errorMessage = event.message ?? "Unknown error"
-//                }
-//            }
-
             let response = try await client.copilot(question: trimmedQuestion)
-
             answer = response.answer
             sources = response.sources
             toolsUsed = response.toolsUsed

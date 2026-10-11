@@ -1,8 +1,10 @@
 import Foundation
 
 struct APIClient {
-    private let baseURL = URL(string: "http://127.0.0.1:8000")!
+    private let baseURL = URL(string: "http://127.0.0.1:8000")
+}
 
+extension APIClient {
     func researchStream(
         question: String,
         topK: Int = 5
@@ -10,40 +12,16 @@ struct APIClient {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
-                    let url = baseURL.appending(path: "research/stream")
-
-                    var request = URLRequest(url: url)
-                    request.httpMethod = "POST"
-                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-                    let encoder = JSONEncoder()
-                    encoder.keyEncodingStrategy = .convertToSnakeCase
-
-                    request.httpBody = try encoder.encode(
-                        ResearchQueryRequest(
-                            question: question,
-                            topK: topK
-                        )
+                    let request = try makeRequest(
+                        path: "research/stream",
+                        question: question,
+                        topK: topK
                     )
 
                     let (bytes, response) = try await URLSession.shared.bytes(for: request)
+                    try validate(response)
 
-                    guard let httpResponse = response as? HTTPURLResponse else {
-                        throw APIError.invalidResponse
-                    }
-
-                    guard (200..<300).contains(httpResponse.statusCode) else {
-                        throw APIError.httpError(httpResponse.statusCode)
-                    }
-
-                    let decoder = JSONDecoder()
-                    decoder.keyDecodingStrategy = .convertFromSnakeCase
-
-                    for try await line in bytes.lines {
-                        guard !line.isEmpty else {
-                            continue
-                        }
-
+                    for try await line in bytes.lines where !line.isEmpty {
                         let data = Data(line.utf8)
 
                         let event = try decoder.decode(
@@ -70,34 +48,14 @@ struct APIClient {
         question: String,
         topK: Int = 5
     ) async throws -> CopilotQueryResponse {
-        let url = baseURL.appending(path: "research/copilot")
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        let encoder = JSONEncoder()
-        encoder.keyEncodingStrategy = .convertToSnakeCase
-
-        request.httpBody = try encoder.encode(
-            ResearchQueryRequest(
-                question: question,
-                topK: topK
-            )
+        let request = try makeRequest(
+            path: "research/copilot",
+            question: question,
+            topK: topK
         )
 
         let (data, response) = try await URLSession.shared.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.invalidResponse
-        }
-
-        guard (200..<300).contains(httpResponse.statusCode) else {
-            throw APIError.httpError(httpResponse.statusCode)
-        }
-
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        try validate(response)
 
         return try decoder.decode(
             CopilotQueryResponse.self,
@@ -106,17 +64,55 @@ struct APIClient {
     }
 }
 
-enum APIError: LocalizedError {
+private extension APIClient {
+    var decoder: JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        return decoder
+    }
+
+    func makeRequest(
+        path: String,
+        question: String,
+        topK: Int
+    ) throws -> URLRequest {
+        guard let url = baseURL?.appending(path: path) else {
+            throw APIError.invalidURL
+        }
+
+        let body = ResearchQueryRequest(question: question, topK: topK)
+        let encoder = JSONEncoder()
+        encoder.keyEncodingStrategy = .convertToSnakeCase
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try encoder.encode(body)
+
+        return request
+    }
+
+    func validate(_ response: URLResponse) throws {
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        guard (200..<300).contains(httpResponse.statusCode) else {
+            throw APIError.httpError(httpResponse.statusCode)
+        }
+    }
+}
+
+enum APIError {
+    case invalidURL
     case invalidResponse
     case httpError(Int)
+}
 
+extension APIError: LocalizedError {
     var errorDescription: String? {
         switch self {
-        case .invalidResponse:
-            "Invalid server response."
-
-        case let .httpError(statusCode):
-            "Server error: \(statusCode)"
+        case .invalidURL: "Invalid server URL."
+        case .invalidResponse: "Invalid server response."
+        case let .httpError(statusCode): "Server error: \(statusCode)"
         }
     }
 }
