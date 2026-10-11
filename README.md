@@ -1,5 +1,3 @@
-<div align="center">
-
 # 📊 investment-research-copilot
 
 決算資料を根拠に答える、SwiftUI と Claude の AI リサーチアプリ
@@ -16,8 +14,6 @@
 ![pytest](https://img.shields.io/badge/pytest-0A9EDC?logo=pytest&logoColor=white)
 
 決算 PDF から根拠を検索 ・ 計算は Python のツール ・ 出典（ページ）付きで回答
-
-</div>
 
 決算 PDF について質問すると、関連する箇所を検索し、その箇所だけを根拠に回答と出典（ページ）を返す。成長率などの計算は LLM ではなく Python で行う。資料に根拠がない質問には答えない。
 
