@@ -4,6 +4,14 @@
 
 [![License](https://img.shields.io/github/license/yossibank/investment-research-copilot)](LICENSE)
 
+![iOS 27+](https://img.shields.io/badge/iOS-27%2B-000000?logo=apple&logoColor=white)
+![Swift 5](https://img.shields.io/badge/Swift-5-F05138?logo=swift&logoColor=white)
+![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
+![SwiftUI](https://img.shields.io/badge/SwiftUI-0A84FF?logo=swift&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
+![Claude](https://img.shields.io/badge/Claude-D97757?logo=claude&logoColor=white)
+![Sentence Transformers](https://img.shields.io/badge/Sentence_Transformers-FFD21E?logo=huggingface&logoColor=white)
+
 決算 PDF について質問すると、関連する箇所を検索し、その箇所だけを根拠に回答と出典（ページ）を返す。成長率などの計算は LLM ではなく Python で行う。資料に根拠がない質問には答えない。
 
 > [!IMPORTANT]
