@@ -6,7 +6,8 @@
 
 変更するときは、次の手順で確かめる。
 
-- 変更したら `python -m pytest backend` を通す。
+- 変更したら `.venv/bin/python -m pytest backend` を通す。
+  - ワークツリーでは `PYTHONPATH=backend/src` を付ける。付けないと、`.venv` が指す元の checkout のコードをテストする。
 - 振る舞いを変えないリファクタリングでは、変更前の出力を先に記録し、変更後と比べる。
   - 比べる対象は、**変えた処理を実際に通るもの**にする。
 - 評価は Claude API を呼ぶので、`--limit 3` で確かめてから全件を実行する。比較の基準は `evaluation/results/mvp-baseline.json`。
