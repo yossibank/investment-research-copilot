@@ -2,10 +2,7 @@ import Playgrounds
 import SwiftUI
 
 @main
-@MainActor
-struct MyApp {}
-
-extension MyApp: App {
+struct MyApp: App {
     var body: some Scene {
         WindowGroup {
             ResearchView()

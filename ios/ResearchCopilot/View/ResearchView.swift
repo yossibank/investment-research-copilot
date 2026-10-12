@@ -1,11 +1,8 @@
 import SwiftUI
 
-@MainActor
-struct ResearchView {
+struct ResearchView: View {
     @State private var viewModel = ResearchViewModel()
-}
 
-extension ResearchView: View {
     var body: some View {
         NavigationStack {
             Form {
