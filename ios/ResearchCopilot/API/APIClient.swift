@@ -95,6 +95,7 @@ private extension APIClient {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
         }
+
         guard (200..<300).contains(httpResponse.statusCode) else {
             throw APIError.httpError(httpResponse.statusCode)
         }

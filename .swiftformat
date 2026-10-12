@@ -10,6 +10,7 @@
 --enable organizeDeclarations
 
 --header strip
+--line-between-guards true
 --mark-categories false
 --max-width 100
 --organization-mode type
